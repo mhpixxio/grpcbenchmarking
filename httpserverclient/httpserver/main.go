@@ -28,7 +28,7 @@ func main() {
 	smalldata = konstruktor.CreateBigData(1, 1)
 	//create big data
 	log.Printf("creating bigdata ...\n")
-	bigdata = konstruktor.CreateBigData(5, 100)
+	bigdata = konstruktor.CreateBigData(500, 100000)
 	log.Printf("finished creating bigdata. server is ready.\n")
 
 	//start server
@@ -48,7 +48,7 @@ func postjsonHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("error: %v", err)
 	}
 	if body != nil {
-		log.Println("received data")
+		//log.Println("received data")
 		//Deserialisierung
 		var data_req []konstruktor.RandomData
 		err = json.Unmarshal(body, &data_req)
@@ -73,7 +73,7 @@ func getjsonHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("error: %v", err)
 	}
 	if body != nil {
-		log.Println("received request")
+		//log.Println("received request")
 		//Deserialisierung
 		var data_req []konstruktor.RandomData
 		err = json.Unmarshal(body, &data_req)
