@@ -57,11 +57,11 @@ func postjsonHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		//fmt.Println(data_req) //print the data from the request
 		//response
-		jsons_res, err := json.Marshal(smalldata)
+		json_res, err := json.Marshal(smalldata)
 		if err != nil {
 			log.Fatalf("error: %v", err)
 		}
-		w.Write(jsons_res)
+		w.Write(json_res)
 	} else {
 		log.Fatalf("did not receive data")
 	}
@@ -73,7 +73,7 @@ func getjsonHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("error: %v", err)
 	}
 	if body != nil {
-		//log.Println("received request")
+		//log.Println("received data")
 		//Deserialisierung
 		var data_req []konstruktor.RandomData
 		err = json.Unmarshal(body, &data_req)
@@ -82,11 +82,11 @@ func getjsonHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		//fmt.Println(data_req) //print the data from the request
 		//response
-		jsons_res, err := json.Marshal(bigdata)
+		json_res, err := json.Marshal(bigdata)
 		if err != nil {
 			log.Fatalf("error: %v", err)
 		}
-		w.Write(jsons_res)
+		w.Write(json_res)
 	} else {
 		log.Fatalf("did not receive data")
 	}

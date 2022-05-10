@@ -49,6 +49,8 @@ github.com/mhpixxio/konstruktor v0.0.0-20220503145706-86355d3fc1b3 h1:viuflB/sqb
 github.com/mhpixxio/konstruktor v0.0.0-20220503145706-86355d3fc1b3/go.mod h1:jsGphNh/Z7iuNef50llYbDMqnY0SKYf8lk/v/zth5wo=
 github.com/mhpixxio/pb v0.0.0-20220504093928-8749520be232 h1:v0s0371zwWWs8JdwQHi6gTK5+mzX2rV8mpB3nrrlTOo=
 github.com/mhpixxio/pb v0.0.0-20220504093928-8749520be232/go.mod h1:bo5K7e/qGolws0zFeQq2V6WtFexIfZsNoeoCu+cnqYY=
+github.com/mhpixxio/pb v0.0.0-20220510114349-1abbcd529c3a h1:Fv1rS7OnJSzpODdq63U3ZezM4WaJLItmZ87HLSKRKYE=
+github.com/mhpixxio/pb v0.0.0-20220510114349-1abbcd529c3a/go.mod h1:bo5K7e/qGolws0zFeQq2V6WtFexIfZsNoeoCu+cnqYY=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
 github.com/rogpeppe/fastuuid v1.2.0/go.mod h1:jVj6XXZzXRy/MSR5jhDC/2q6DgLz+nrA6LYCDYWNEvQ=

@@ -20,16 +20,20 @@ func main() {
 	//adress
 	httpurl := "http://localhost:4040"
 	//define loopsizes
-	bigloops := 10
-	loops := 10
+	runs := 10
+	loops := 10 //amount of messages for one time measurement
 	amountSmalldata := 100
-	//define variable to save benchmark results
-	benchmark_time := make([][]int, bigloops)
+	//define variables to save benchmark results
+	benchmark_time := make([][]int, runs)
 	for i := range benchmark_time {
 		benchmark_time[i] = make([]int, 5) // 5 = the number of tests
 	}
+	benchmark_size := make([][]int, runs)
+	for i := range benchmark_size {
+		benchmark_size[i] = make([]int, 4) // 4 = the number of different measurements per run
+	}
 
-	for k := 0; k < bigloops; k++ {
+	for k := 0; k < runs; k++ {
 
 		//create small data
 		smalldata := konstruktor.CreateBigData(1, 1)
@@ -39,6 +43,18 @@ func main() {
 		log.Printf("finished creating bigdata. server is ready.\n")
 
 		log.Printf("starting benchmark run %v...\n", k)
+
+		//Measuring the Size of Big and Small Requests und Responses
+		//get request and response size of smalldata
+		_, requestsize_small, responsesize_small := jsonclient(httpurl, "/postjson", smalldata)
+		//get request and response size of bigdata
+		_, requestsize_big, responsesize_big := jsonclient(httpurl, "/getjson", bigdata)
+		//assign values
+		benchmark_size[k][0] = requestsize_small
+		benchmark_size[k][1] = responsesize_small
+		benchmark_size[k][2] = requestsize_big
+		benchmark_size[k][3] = responsesize_big
+		log.Printf("done with size measurement")
 
 		//Sending Big Data to Server
 		start := time.Now()
@@ -98,12 +114,12 @@ func main() {
 	}
 
 	//print benchmark_time to a file
-	file, err := os.OpenFile("benchmarking_http_"+strconv.Itoa(time.Now().Year())+time.Now().Month().String()+strconv.Itoa(time.Now().Day())+"_"+strconv.Itoa(time.Now().Hour())+"_"+strconv.Itoa(time.Now().Minute())+"_"+strconv.Itoa(time.Now().Second())+".txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile("benchmarking_time_http_"+strconv.Itoa(time.Now().Year())+time.Now().Month().String()+strconv.Itoa(time.Now().Day())+"_"+strconv.Itoa(time.Now().Hour())+"_"+strconv.Itoa(time.Now().Minute())+"_"+strconv.Itoa(time.Now().Second())+".txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatalf("failed creating file: %s", err)
 	}
 	datawriter := bufio.NewWriter(file)
-	for k := 0; k < bigloops; k++ {
+	for k := 0; k < runs; k++ {
 		for t := 0; t < 5; t++ {
 			_, _ = datawriter.WriteString(strconv.Itoa(k) + "\t" + strconv.Itoa(t) + "\t" + strconv.Itoa(benchmark_time[k][t]) + "\t")
 		}
@@ -111,9 +127,24 @@ func main() {
 	}
 	datawriter.Flush()
 	file.Close()
+
+	//print benchmark_size to a file
+	file, err = os.OpenFile("benchmarking_size_http_"+strconv.Itoa(time.Now().Year())+time.Now().Month().String()+strconv.Itoa(time.Now().Day())+"_"+strconv.Itoa(time.Now().Hour())+"_"+strconv.Itoa(time.Now().Minute())+"_"+strconv.Itoa(time.Now().Second())+".txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatalf("failed creating file: %s", err)
+	}
+	datawriter = bufio.NewWriter(file)
+	for k := 0; k < runs; k++ {
+		for t := 0; t < 4; t++ {
+			_, _ = datawriter.WriteString(strconv.Itoa(k) + "\t" + strconv.Itoa(t) + "\t" + strconv.Itoa(benchmark_size[k][t]) + "\t")
+		}
+		_, _ = datawriter.WriteString("\n")
+	}
+	datawriter.Flush()
+	file.Close()
 }
 
-func jsonclient(httpurl string, endpoint string, data []konstruktor.RandomData) (answer *http.Response) {
+func jsonclient(httpurl string, endpoint string, data []konstruktor.RandomData) (body []byte, requestsize int, responsesize int) {
 	//Serialisierung
 	jsonData, err := json.Marshal(data)
 	if err != nil {
@@ -137,10 +168,12 @@ func jsonclient(httpurl string, endpoint string, data []konstruktor.RandomData) 
 	//log.Println("sent data: ", string(jsonData)) //print the data
 	//log.Println("response Status:", response.Status)
 	//log.Println("response Headers:", response.Header)
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil || body == nil {
+	resp_body, err := ioutil.ReadAll(response.Body)
+	if err != nil || resp_body == nil {
 		log.Fatalf("error: %v", err)
 	}
-	//log.Println("response Body:", string(body))
-	return response
+	//log.Println("response Body:", string(resp_body))
+	resp_requestsize := int(request.ContentLength) + len(request.Header)
+	resp_responsesize := len(resp_body) + len(response.Header)
+	return resp_body, resp_requestsize, resp_responsesize
 }

@@ -8,6 +8,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	protoV2 "google.golang.org/protobuf/proto"
 
 	"github.com/mhpixxio/konstruktor"
 	pb "github.com/mhpixxio/pb"
@@ -61,13 +62,21 @@ func (s *server_bigdata) BigDataFunc(ctx context.Context, request *pb.BigDataReq
 	//log.Printf("Received: %v %v", request.ProtoReflect().Descriptor().FullName(), request.Info)
 	//log.Println(request.Bigdatareq) //print the bigdata
 	//check if big data should be responded
-	if request.Returnbigdata == true {
-		return &pb.BigDataResponse{Info: "server: successfully received request. here, have some data:", Bigdatares: res_bigdata}, nil
-	} else {
-		return &pb.BigDataResponse{Info: "server: successfully received request.", Bigdatares: nil}, nil
-	}
-	//return the response
 
+	res_bigdata_var := &pb.BigData{}
+	res_bigdata_var = nil
+	if request.Returnbigdata == true {
+		res_bigdata_var = res_bigdata
+	}
+	var sizeofrequestres_var int64
+	if request.Returnsizeofrequest == true {
+		sizeofrequestres_var = int64(protoV2.Size(request))
+	} else {
+		sizeofrequestres_var = 0
+	}
+
+	//return the response
+	return &pb.BigDataResponse{Info: "server: successfully received request.", Bigdatares: res_bigdata_var, Sizeofrequestres: sizeofrequestres_var}, nil
 }
 
 func queryHandler(w http.ResponseWriter, r *http.Request) {
