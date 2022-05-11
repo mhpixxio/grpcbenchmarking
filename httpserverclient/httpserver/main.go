@@ -3,13 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 
-	"github.com/mhpixxio/konstruktor"
+	konstruktor "github.com/mhpixxio/konstruktor"
 )
 
 var bigdata []konstruktor.RandomData
@@ -17,29 +15,33 @@ var smalldata []konstruktor.RandomData
 
 func main() {
 
+	//settings
+	size_bigdata := 354 //in megabytes (size when same data gets encrpyted in grpc protobuf)
+	port_address := ":4040"
+
 	//define endpoints
-	http.HandleFunc("/hello", helloWorldHandler)
+	http.HandleFunc("/connectiontest", connectiontestHandler)
 	http.HandleFunc("/postjson", postjsonHandler)
 	http.HandleFunc("/getjson", getjsonHandler)
-	http.HandleFunc("/upload", uploadHandler)
-	http.HandleFunc("/download", downloadHandler)
 
 	//create small data
 	smalldata = konstruktor.CreateBigData(1, 1)
 	//create big data
 	log.Printf("creating bigdata ...\n")
-	bigdata = konstruktor.CreateBigData(500, 100000)
+	var length_bigdata int
+	length_bigdata = (size_bigdata*1000000 - 17) / 3524 //notiz: empirisch ermittelt
+	bigdata = konstruktor.CreateBigData(500, length_bigdata)
 	log.Printf("finished creating bigdata. server is ready.\n")
 
 	//start server
-	fmt.Printf("starting server at port 4040\n")
-	if err := http.ListenAndServe(":4040", nil); err != nil {
+	fmt.Printf("starting server at port" + port_address + "\n")
+	if err := http.ListenAndServe(port_address, nil); err != nil {
 		log.Fatalf("error: %v", err)
 	}
 }
 
-func helloWorldHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello World!")
+func connectiontestHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Hello World! Connection successful!")
 }
 
 func postjsonHandler(w http.ResponseWriter, r *http.Request) {
@@ -90,40 +92,4 @@ func getjsonHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Fatalf("did not receive data")
 	}
-}
-
-func uploadHandler(w http.ResponseWriter, r *http.Request) {
-	// limit size
-	r.ParseMultipartForm(80 << 9)
-	// retrieve file from FormFile
-	file, handler, err := r.FormFile("file")
-	if err != nil {
-		log.Fatalf("error: %v", err)
-	}
-	//close file again
-	defer file.Close()
-	// storage path
-	f, err := os.OpenFile("../http-server/uploadedfiles/"+handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
-	if err != nil {
-		log.Fatalf("error: %v", err)
-	} else {
-		fmt.Fprintf(w, "upload successful")
-	}
-	// copy the file to the destination path
-	io.Copy(f, file)
-}
-
-func downloadHandler(w http.ResponseWriter, r *http.Request) {
-	// get filename
-	var filename string = r.FormValue("filename")
-	// search for file
-	fileBytes, err := ioutil.ReadFile("../http-server/uploadedfiles/" + filename)
-	if err != nil {
-		log.Fatalf("error: %v", err)
-	}
-	// send file
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/octet-stream")
-	w.Write(fileBytes)
-	fmt.Fprintf(w, "download successful")
 }
