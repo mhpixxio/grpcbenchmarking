@@ -2,24 +2,26 @@
 
 Comparison between a grpc server & client using protobuf protocols and a http server & client using
 jsons for data transfer.
-The clients run a number of data transfer scenarios after they are started and give out two .txt-files
-with all the time and size measurements. The content of these .txt-files can be copied and pasted into
-the provided excel sheet into the tabs "... raw data". The benchmarking analysis in the "Benchmarking"-tab
-gets then updated automatically.
-The grpc server and client both need the same packages providing the specific protobuf message and service
-types used in this application. These had been defined previously and are provided by the import of
+The clients run a number of data transfer scenarios and give out two .txt-files with all the time and 
+size measurements. The content of these .txt-files can be copied and pasted into the provided excel 
+sheet into the tabs "... raw data". The benchmarking analysis in the "Benchmarking"-tab gets then 
+updated automatically.
+The grpc server and client both need the same packages providing the specific protobuf message and 
+service types used in this application. These had been defined previously and are provided by the 
+import of
 "github.com/mhpixxio/pb".
 
 
 +++tests+++
 
-The tests use big and small data packages (see chapter "the data" for futher explanation). The sizes and
-amounts can be changed (see chapter "flags").
+The tests use big and small data packages (see chapter "the data" for futher explanation). The sizes 
+and amounts can be changed (see chapter "flags"). With default flags the client runs all tests 50 times.
 1. Size Measurements
   1.1 Size of a request with small data
   1.2 Size of a response with small data
   1.3 Size of a request with big data
   1.4 Size of a response with big data
+  (Additionally for the http tranfers, the size of the headers always gets measured)
 2. Time Measurements
   2.1 Sending Big Data to Server
   2.2 Receiving Big Data from Server
@@ -45,7 +47,7 @@ gprc client flags:
     -only_size_measurement
         if true, skips the time measurments
     -runs int
-        number of runs (default 10)
+        number of runs (default 50)
     -size_bigdata int
         in megabytes (size when data gets encrpyted in grpc protobuf) (default 354)
 http server flags:
@@ -63,7 +65,7 @@ http client flags:
     -only_size_measurement
         if true, skips the time measurments
     -runs int
-        number of runs (default 10)
+        number of runs (default 50)
     -size_bigdata int
         in megabytes (size when data gets encrpyted in grpc protobuf) (default 354)
 
@@ -86,6 +88,6 @@ type RandomData struct {
 Each string consists of Y random characters. The package konstruktor "github.com/mhpixxio/konstruktor" provides
 the method konstruktor.CreateBigData(X, Y) and konstruktor.CreateBigData_proto(X, Y) which create the data used
 in the tests. The empirically determined function "Y = (size_bigdata*1000000 - 17) / 3524" gives Y for size_bigdata
-given in megabytes and X=500.
+given in megabytes and X set to 500.
 The small data used in the tests is created with X=1 and Y=1.
 

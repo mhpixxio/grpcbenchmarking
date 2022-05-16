@@ -21,7 +21,7 @@ func main() {
 	//flags
 	http_url_flag := flag.String("http_url", "http://localhost:4040", "the address")
 	size_bigdata_flag := flag.Int("size_bigdata", 354, "in megabytes (size when data gets encrpyted in grpc protobuf)")
-	runs_flag := flag.Int("runs", 10, "number of runs")
+	runs_flag := flag.Int("runs", 50, "number of runs")
 	loops_flag := flag.Int("loops", 10, "number of repeated messages before time measurement and taking average. Gives a more accurate result")
 	amountSmalldata_flag := flag.Int("amountSmalldata", 100, "amount of small-data-messages for sending a lot of small messages simultaniously or after one another")
 	only_size_measurement_flag := flag.Bool("only_size_measurement", false, "if true, skips the time measurments")

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
-	protoV2 "google.golang.org/protobuf/proto"
+	proto "google.golang.org/protobuf/proto"
 
 	konstruktor "github.com/mhpixxio/konstruktor"
 	pb "github.com/mhpixxio/pb"
@@ -22,8 +22,8 @@ func main() {
 	//flags
 	address_flag := flag.String("address", "localhost:8080", "the address")
 	size_bigdata_flag := flag.Int("size_bigdata", 354, "in megabytes (size when data gets encrpyted in grpc protobuf)")
-	runs_flag := flag.Int("runs", 10, "number of runs")
-	loops_flag := flag.Int("loops", 10, "number of repeated messages before time measurement and taking average. Gives a more accurate result")
+	runs_flag := flag.Int("runs", 1, "number of runs")
+	loops_flag := flag.Int("loops", 50, "number of repeated messages before time measurement and taking average. Gives a more accurate result")
 	amountSmalldata_flag := flag.Int("amountSmalldata", 100, "amount of small-data-messages for sending a lot of small messages simultaniously or after one another")
 	only_size_measurement_flag := flag.Bool("only_size_measurement", false, "if true, skips the time measurments")
 	flag.Parse()
@@ -93,15 +93,15 @@ func main() {
 		if err != nil || responseBigDataFunc == nil {
 			log.Fatalf("could not use service: %v", err)
 		}
-		requestsize_small := protoV2.Size(&pb.BigDataRequest{Bigdatareq: req_smalldata, Returnbigdata: false})
-		responsesize_small := protoV2.Size(responseBigDataFunc)
+		requestsize_small := proto.Size(&pb.BigDataRequest{Bigdatareq: req_smalldata, Returnbigdata: false})
+		responsesize_small := proto.Size(responseBigDataFunc)
 		//call service with big data
 		responseBigDataFunc, err = client_bigdata.BigDataFunc(context.Background(), &pb.BigDataRequest{Bigdatareq: req_bigdata, Returnbigdata: true}, calloption_recv)
 		if err != nil || responseBigDataFunc == nil {
 			log.Fatalf("could not use service: %v", err)
 		}
-		requestsize_big := protoV2.Size(&pb.BigDataRequest{Bigdatareq: req_bigdata, Returnbigdata: true})
-		responsesize_big := protoV2.Size(responseBigDataFunc)
+		requestsize_big := proto.Size(&pb.BigDataRequest{Bigdatareq: req_bigdata, Returnbigdata: true})
+		responsesize_big := proto.Size(responseBigDataFunc)
 		benchmark_size[k][0] = requestsize_small
 		benchmark_size[k][1] = responsesize_small
 		benchmark_size[k][2] = requestsize_big
