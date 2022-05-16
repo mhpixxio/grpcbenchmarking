@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"flag"
 	"log"
 	"os"
 	"strconv"
@@ -18,13 +19,21 @@ import (
 
 func main() {
 
-	//settings
-	address := "localhost:8080"
-	size_bigdata := 354 //in megabytes (size when data gets encrpyted in grpc protobuf)
-	runs := 10
-	loops := 10 //amount of messages for one time measurement
-	amountSmalldata := 100
-	only_size_measurement := false
+	//flags
+	address_flag := flag.String("address", "localhost:8080", "the address")
+	size_bigdata_flag := flag.Int("size_bigdata", 354, "in megabytes (size when data gets encrpyted in grpc protobuf)")
+	runs_flag := flag.Int("runs", 10, "number of runs")
+	loops_flag := flag.Int("loops", 10, "number of repeated messages before time measurement and taking average. Gives a more accurate result")
+	amountSmalldata_flag := flag.Int("amountSmalldata", 100, "amount of small-data-messages for sending a lot of small messages simultaniously or after one another")
+	only_size_measurement_flag := flag.Bool("only_size_measurement", false, "if true, skips the time measurments")
+	flag.Parse()
+	address := *address_flag
+	size_bigdata := *size_bigdata_flag
+	runs := *runs_flag
+	loops := *loops_flag
+	amountSmalldata := *amountSmalldata_flag
+	only_size_measurement := *only_size_measurement_flag
+	log.Printf("address: %v, size_bigdata: %v, runs: %v, loops: %v, amountSmalldata: %v, only_size_measurement: %v", address, size_bigdata, runs, loops, amountSmalldata, only_size_measurement)
 
 	//set dial
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -59,7 +68,7 @@ func main() {
 		log.Printf("creating bigdata ...\n")
 		bigdata_proto := []*pb.RandomData{}
 		var length_bigdata int
-		length_bigdata = (size_bigdata*1000000 - 17) / 3524 //notiz: empirisch ermittelt
+		length_bigdata = (size_bigdata*1000000 - 17) / 3524 //note: determined empirically
 		bigdata_proto = konstruktor.CreateBigData_proto(500, length_bigdata)
 		req_bigdata := &pb.BigData{Content: bigdata_proto}
 		log.Printf("finished creating bigdata. client is ready.\n")

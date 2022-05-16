@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -15,9 +16,13 @@ var smalldata []konstruktor.RandomData
 
 func main() {
 
-	//settings
-	size_bigdata := 354 //in megabytes (size when same data gets encrpyted in grpc protobuf)
-	port_address := ":4040"
+	//flags
+	port_address_flag := flag.String("port_address", ":4040", "the port_address")
+	size_bigdata_flag := flag.Int("size_bigdata", 354, "in megabytes (size when data gets encrpyted in grpc protobuf)")
+	flag.Parse()
+	port_address := *port_address_flag
+	size_bigdata := *size_bigdata_flag
+	log.Printf("port_address: %v, size_bigdata: %v", port_address, size_bigdata)
 
 	//define endpoints
 	http.HandleFunc("/connectiontest", connectiontestHandler)
@@ -29,7 +34,7 @@ func main() {
 	//create big data
 	log.Printf("creating bigdata ...\n")
 	var length_bigdata int
-	length_bigdata = (size_bigdata*1000000 - 17) / 3524 //notiz: empirisch ermittelt
+	length_bigdata = (size_bigdata*1000000 - 17) / 3524 //note: determined empirically
 	bigdata = konstruktor.CreateBigData(500, length_bigdata)
 	log.Printf("finished creating bigdata. server is ready.\n")
 
@@ -51,7 +56,7 @@ func postjsonHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if body != nil {
 		//log.Println("received data")
-		//Deserialisierung
+		//deserialisation
 		var data_req []konstruktor.RandomData
 		err = json.Unmarshal(body, &data_req)
 		if err != nil {
@@ -76,7 +81,7 @@ func getjsonHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if body != nil {
 		//log.Println("received data")
-		//Deserialisierung
+		//deserialisation
 		var data_req []konstruktor.RandomData
 		err = json.Unmarshal(body, &data_req)
 		if err != nil {

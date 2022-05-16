@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
 	"net"
 
@@ -24,9 +25,13 @@ type server_bigdata struct {
 
 func main() {
 
-	//settings
-	port_address := ":8080"
-	size_bigdata := 354 //in megabytes (size when data gets encrpyted in grpc protobuf)
+	//flags
+	port_address_flag := flag.String("port_address", ":8080", "the port_address")
+	size_bigdata_flag := flag.Int("size_bigdata", 354, "in megabytes (size when data gets encrpyted in grpc protobuf)")
+	flag.Parse()
+	port_address := *port_address_flag
+	size_bigdata := *size_bigdata_flag
+	log.Printf("port_address: %v, size_bigdata: %v", port_address, size_bigdata)
 
 	//start server
 	log.Printf("starting server at port" + port_address + "\n")
@@ -42,7 +47,7 @@ func main() {
 	log.Printf("creating bigdata ...\n")
 	bigdata_proto := []*pb.RandomData{}
 	var length_bigdata int
-	length_bigdata = (size_bigdata*1000000 - 17) / 3524 //notiz: empirisch ermittelt
+	length_bigdata = (size_bigdata*1000000 - 17) / 3524 //note: determined empirically
 	bigdata_proto = konstruktor.CreateBigData_proto(500, length_bigdata)
 	res_bigdata = &pb.BigData{Content: bigdata_proto}
 	log.Printf("finished creating bigdata. server is ready.\n")

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"flag"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -17,13 +18,21 @@ import (
 
 func main() {
 
-	//settings
-	http_url := "http://localhost:4040"
-	size_bigdata := 354 //in megabytes (size when same data gets encrpyted in grpc protobuf)
-	runs := 10
-	loops := 10 //amount of messages for one time measurement
-	amountSmalldata := 100
-	only_size_measurement := false
+	//flags
+	http_url_flag := flag.String("http_url", "http://localhost:4040", "the address")
+	size_bigdata_flag := flag.Int("size_bigdata", 354, "in megabytes (size when data gets encrpyted in grpc protobuf)")
+	runs_flag := flag.Int("runs", 10, "number of runs")
+	loops_flag := flag.Int("loops", 10, "number of repeated messages before time measurement and taking average. Gives a more accurate result")
+	amountSmalldata_flag := flag.Int("amountSmalldata", 100, "amount of small-data-messages for sending a lot of small messages simultaniously or after one another")
+	only_size_measurement_flag := flag.Bool("only_size_measurement", false, "if true, skips the time measurments")
+	flag.Parse()
+	http_url := *http_url_flag
+	size_bigdata := *size_bigdata_flag
+	runs := *runs_flag
+	loops := *loops_flag
+	amountSmalldata := *amountSmalldata_flag
+	only_size_measurement := *only_size_measurement_flag
+	log.Printf("http_url: %v, size_bigdata: %v, runs: %v, loops: %v, amountSmalldata: %v, only_size_measurement: %v", http_url, size_bigdata, runs, loops, amountSmalldata, only_size_measurement)
 
 	//define variables to save benchmark results
 	benchmark_time := make([][]int, runs)
@@ -42,7 +51,7 @@ func main() {
 		//create big data
 		log.Printf("creating bigdata ...\n")
 		var length_bigdata int
-		length_bigdata = (size_bigdata*1000000 - 17) / 3524 //notiz: empirisch ermittelt
+		length_bigdata = (size_bigdata*1000000 - 17) / 3524 //note: determined empirically
 		bigdata := konstruktor.CreateBigData(500, length_bigdata)
 		log.Printf("finished creating bigdata. server is ready.\n")
 
@@ -154,7 +163,7 @@ func main() {
 }
 
 func jsonclient(http_url string, endpoint string, data []konstruktor.RandomData) (body []byte, requestsize int, requestheadersize int, responsesize int, responseheadersize int) {
-	//Serialisierung
+	//serialisation
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		log.Fatalf("error: %v", err)
