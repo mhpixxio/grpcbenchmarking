@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
 	konstruktor "github.com/mhpixxio/konstruktor"
 )
@@ -28,6 +30,8 @@ func main() {
 	http.HandleFunc("/connectiontest", connectiontestHandler)
 	http.HandleFunc("/postjson", postjsonHandler)
 	http.HandleFunc("/getjson", getjsonHandler)
+	http.HandleFunc("/upload", uploadHandler)
+	http.HandleFunc("/download", downloadHandler)
 
 	//create small data
 	smalldata = konstruktor.CreateBigData(1, 1)
@@ -97,4 +101,49 @@ func getjsonHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Fatalf("did not receive data")
 	}
+}
+
+func uploadHandler(w http.ResponseWriter, r *http.Request) {
+	// limit size
+	r.ParseMultipartForm(80 << 9)
+	// retrieve file from FormFile
+	file, handler, err := r.FormFile("file")
+	if err != nil {
+		fmt.Fprintf(w, "could not retrieve file")
+		panic(err)
+	}
+	//close file again
+	defer file.Close()
+	// storage path
+	f, err := os.OpenFile("../httpserver/uploadedfiles/"+handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		fmt.Fprintf(w, "could not save file")
+		panic(err)
+	} else {
+		fmt.Fprintf(w, "upload successful")
+	}
+	// copy the file to the destination path
+	io.Copy(f, file)
+	//response
+	json_res, err := json.Marshal(smalldata)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
+	w.Write(json_res)
+}
+
+func downloadHandler(w http.ResponseWriter, r *http.Request) {
+	// get filename
+	var filename string = r.FormValue("filename")
+	// search for file
+	fileBytes, err := ioutil.ReadFile("../httpserver/uploadedfiles/" + filename)
+	if err != nil {
+		fmt.Fprintf(w, "could not find file")
+		panic(err)
+	}
+	// send file
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Write(fileBytes)
+	fmt.Fprintf(w, "download successful")
 }

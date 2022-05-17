@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"io/ioutil"
 	"log"
 	"net"
 
@@ -21,6 +22,12 @@ type server_text struct {
 }
 type server_bigdata struct {
 	pb.BigDataServiceServer
+}
+type server_upload struct {
+	pb.UploadServiceServer
+}
+type server_download struct {
+	pb.DownloadServiceServer
 }
 
 func main() {
@@ -58,6 +65,8 @@ func main() {
 	s := grpc.NewServer(calloption_recv)
 	pb.RegisterTextServiceServer(s, &server_text{})
 	pb.RegisterBigDataServiceServer(s, &server_bigdata{})
+	pb.RegisterUploadServiceServer(s, &server_upload{})
+	pb.RegisterDownloadServiceServer(s, &server_download{})
 	reflection.Register(s)
 	if err := s.Serve(listener); err != nil {
 		log.Fatalf("failed to serve: %v", err)
@@ -81,4 +90,26 @@ func (s *server_bigdata) BigDataFunc(ctx context.Context, request *pb.BigDataReq
 	}
 	//return the response
 	return &pb.BigDataResponse{Bigdatares: res_bigdata_var}, nil
+}
+
+func (s *server_upload) UploadFunc(ctx context.Context, request *pb.UploadRequest) (*pb.UploadResponse, error) {
+	//log.Printf("Received: %v %v", request.ProtoReflect().Descriptor().FullName(), request.Info) //print the name of the request
+	err := ioutil.WriteFile("../grpcserver/uploadedfiles/"+request.Filename, request.Filebytes, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	res_bigdata_var := &pb.BigData{}
+	res_bigdata_var = res_smalldata
+	//return the response
+	return &pb.UploadResponse{Bigdatares: res_bigdata_var}, nil
+}
+
+func (s *server_download) DownloadFunc(ctx context.Context, request *pb.DownloadRequest) (*pb.DownloadResponse, error) {
+	//log.Printf("Received: %v %v", request.ProtoReflect().Descriptor().FullName(), request.Info) //print the name of the request
+	data, err := ioutil.ReadFile("../grpcserver/uploadedfiles/" + request.Filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//return the response
+	return &pb.DownloadResponse{Filebytes: data}, nil
 }
