@@ -29,6 +29,9 @@ func main() {
 	loops_flag := flag.Int("loops", 10, "number of repeated messages before time measurement and taking average. Gives a more accurate result")
 	amountSmalldata_flag := flag.Int("amountSmalldata", 100, "amount of small-data-messages for sending a lot of small messages simultaniously or after one another")
 	only_size_measurement_flag := flag.Bool("only_size_measurement", false, "if true, skips the time measurments")
+	random_data_measurement_flag := flag.Bool("activates random data measurement", true, "if false, skips the random data measurments")
+	file_measurement_flag := flag.Bool("activates file measurement", true, "if false, skips the file measurments")
+	//stream_measurement_flag := flag.Bool("activates stream measurement", true, "if false, skips the stream measurments")
 	flag.Parse()
 	http_url := *http_url_flag
 	filename := *filename_flag
@@ -37,6 +40,10 @@ func main() {
 	loops := *loops_flag
 	amountSmalldata := *amountSmalldata_flag
 	only_size_measurement := *only_size_measurement_flag
+	random_data_measurement := *random_data_measurement_flag
+	file_measurement := *file_measurement_flag
+	//stream_measurement := *stream_measurement_flag
+
 	log.Printf("http_url: %v, size_bigdata: %v, runs: %v, loops: %v, amountSmalldata: %v, only_size_measurement: %v", http_url, size_bigdata, runs, loops, amountSmalldata, only_size_measurement)
 
 	//define variables to save benchmark results
@@ -51,6 +58,7 @@ func main() {
 		benchmark_size[i] = make([]int, benchmark_size_entries)
 	}
 
+	//start the runs
 	for k := 0; k < runs; k++ {
 
 		//create small data
@@ -64,110 +72,142 @@ func main() {
 
 		log.Printf("starting benchmark run %v...\n", k)
 
-		//Measuring the Size of Small and Big Requests und Responses
-		_, requestsize_small, requestheadersize_small, responsesize_small, responseheadersize_small := jsonclient(http_url, "/postjson", smalldata)
-		_, requestsize_big, requestheadersize_big, responsesize_big, responseheadersize_big := jsonclient(http_url, "/getjson", bigdata)
-		//file upload and download
-		_, requestsize_upload, requestheadersize_upload, responsesize_upload, responseheadersize_upload := uploadclient(http_url, "/upload", "../httpclient/foruploadfiles/"+filename)
-		_, responsesize_download, responseheadersize_download := downloadclient(http_url+"/download?filename="+filename, "../httpclient/downloadedfiles/"+filename)
-		//writing benchmark data
-		benchmark_size[k][0] = requestsize_small
-		benchmark_size[k][1] = requestheadersize_small
-		benchmark_size[k][2] = responsesize_small
-		benchmark_size[k][3] = responseheadersize_small
-		benchmark_size[k][4] = requestsize_big
-		benchmark_size[k][5] = requestheadersize_big
-		benchmark_size[k][6] = responsesize_big
-		benchmark_size[k][7] = responseheadersize_big
-		benchmark_size[k][8] = requestsize_upload
-		benchmark_size[k][9] = requestheadersize_upload
-		benchmark_size[k][10] = responsesize_upload
-		benchmark_size[k][11] = responseheadersize_upload
-		benchmark_size[k][12] = responsesize_download
-		benchmark_size[k][13] = responseheadersize_download
+		//Measuring the Sizes of transfered data
+		if random_data_measurement == true {
+			//Measuring the Size of Small and Big Requests und Responses
+			_, requestsize_small, requestheadersize_small, responsesize_small, responseheadersize_small := jsonclient(http_url, "/postjson", smalldata)
+			_, requestsize_big, requestheadersize_big, responsesize_big, responseheadersize_big := jsonclient(http_url, "/getjson", bigdata)
+			benchmark_size[k][0] = requestsize_small
+			benchmark_size[k][1] = requestheadersize_small
+			benchmark_size[k][2] = responsesize_small
+			benchmark_size[k][3] = responseheadersize_small
+			benchmark_size[k][4] = requestsize_big
+			benchmark_size[k][5] = requestheadersize_big
+			benchmark_size[k][6] = responsesize_big
+			benchmark_size[k][7] = responseheadersize_big
+		} else {
+			benchmark_size[k][0] = 0
+			benchmark_size[k][1] = 0
+			benchmark_size[k][2] = 0
+			benchmark_size[k][3] = 0
+			benchmark_size[k][4] = 0
+			benchmark_size[k][5] = 0
+			benchmark_size[k][6] = 0
+			benchmark_size[k][7] = 0
+		}
+		if file_measurement == true {
+			//file upload and download
+			_, requestsize_upload, requestheadersize_upload, responsesize_upload, responseheadersize_upload := uploadclient(http_url, "/upload", "../httpclient/foruploadfiles/"+filename)
+			_, responsesize_download, responseheadersize_download := downloadclient(http_url+"/download?filename="+filename, "../httpclient/downloadedfiles/"+filename)
+			//writing benchmark data
+			benchmark_size[k][8] = requestsize_upload
+			benchmark_size[k][9] = requestheadersize_upload
+			benchmark_size[k][10] = responsesize_upload
+			benchmark_size[k][11] = responseheadersize_upload
+			benchmark_size[k][12] = responsesize_download
+			benchmark_size[k][13] = responseheadersize_download
+		} else {
+			benchmark_size[k][8] = 0
+			benchmark_size[k][9] = 0
+			benchmark_size[k][10] = 0
+			benchmark_size[k][11] = 0
+			benchmark_size[k][12] = 0
+			benchmark_size[k][13] = 0
+		}
 		log.Printf("done with size measurement")
 
+		//Time Measurements
 		if only_size_measurement == false {
-			//Sending Big Data to Server
-			start := time.Now()
-			for i := 0; i < loops; i++ {
-				jsonclient(http_url, "/postjson", bigdata)
-			}
-			elapsed := int(time.Since(start)) / loops
-			benchmark_time[k][0] = int(elapsed)
-			log.Printf("done with test 0")
-
-			//Receiving Big Data from Server
-			start = time.Now()
-			for i := 0; i < loops; i++ {
-				jsonclient(http_url, "/getjson", smalldata)
-			}
-			elapsed = int(time.Since(start)) / loops
-			benchmark_time[k][1] = int(elapsed)
-			log.Printf("done with test 1")
-
-			//Sending Small Data to Server and Recieving Small Data
-			start = time.Now()
-			for i := 0; i < loops; i++ {
-				jsonclient(http_url, "/postjson", smalldata)
-			}
-			elapsed = int(time.Since(start)) / loops
-			benchmark_time[k][2] = int(elapsed)
-			log.Printf("done with test 2")
-
-			//Sending a lot of Small Data to Server simultaniously
-			start = time.Now()
-			var wg sync.WaitGroup
-			for i := 0; i < loops; i++ {
-				wg.Add(amountSmalldata)
-				for j := 0; j < amountSmalldata; j++ {
-					go func() {
-						jsonclient(http_url, "/postjson", smalldata)
-						defer wg.Done()
-					}()
+			if random_data_measurement == true {
+				//Sending Big Data to Server
+				start := time.Now()
+				for i := 0; i < loops; i++ {
+					jsonclient(http_url, "/postjson", bigdata)
 				}
-				wg.Wait()
-			}
-			elapsed = int(time.Since(start)) / loops
-			benchmark_time[k][3] = int(elapsed)
-			log.Printf("done with test 3")
-
-			//Sending a lot of Small Data to Server after one another
-			start = time.Now()
-			for i := 0; i < loops; i++ {
-				for j := 0; j < amountSmalldata; j++ {
+				elapsed := int(time.Since(start)) / loops
+				benchmark_time[k][0] = int(elapsed)
+				log.Printf("done with test 0")
+				//Receiving Big Data from Server
+				start = time.Now()
+				for i := 0; i < loops; i++ {
+					jsonclient(http_url, "/getjson", smalldata)
+				}
+				elapsed = int(time.Since(start)) / loops
+				benchmark_time[k][1] = int(elapsed)
+				log.Printf("done with test 1")
+				//Sending Small Data to Server and Receiving Small Data
+				start = time.Now()
+				for i := 0; i < loops; i++ {
 					jsonclient(http_url, "/postjson", smalldata)
 				}
-			}
-			elapsed = int(time.Since(start)) / loops
-			benchmark_time[k][4] = int(elapsed)
-			log.Printf("done with test 4")
-			//Upload a file to the server
-			start = time.Now()
-			for i := 0; i < loops; i++ {
-				for j := 0; j < amountSmalldata; j++ {
-					uploadclient(http_url, "/upload", "../httpclient/foruploadfiles/"+filename)
+				elapsed = int(time.Since(start)) / loops
+				benchmark_time[k][2] = int(elapsed)
+				log.Printf("done with test 2")
+				//Sending a lot of Small Data to Server simultaniously
+				start = time.Now()
+				var wg sync.WaitGroup
+				for i := 0; i < loops; i++ {
+					wg.Add(amountSmalldata)
+					for j := 0; j < amountSmalldata; j++ {
+						go func() {
+							jsonclient(http_url, "/postjson", smalldata)
+							defer wg.Done()
+						}()
+					}
+					wg.Wait()
 				}
-			}
-			elapsed = int(time.Since(start)) / loops
-			benchmark_time[k][5] = int(elapsed)
-			log.Printf("done with test 5")
-			//Download a file from the server
-			start = time.Now()
-			for i := 0; i < loops; i++ {
-				for j := 0; j < amountSmalldata; j++ {
-					downloadclient(http_url+"/download?filename="+filename, "../httpclient/downloadedfiles/"+filename)
+				elapsed = int(time.Since(start)) / loops
+				benchmark_time[k][3] = int(elapsed)
+				log.Printf("done with test 3")
+				//Sending a lot of Small Data to Server after one another
+				start = time.Now()
+				for i := 0; i < loops; i++ {
+					for j := 0; j < amountSmalldata; j++ {
+						jsonclient(http_url, "/postjson", smalldata)
+					}
 				}
+				elapsed = int(time.Since(start)) / loops
+				benchmark_time[k][4] = int(elapsed)
+				log.Printf("done with test 4")
+			} else {
+				benchmark_time[k][0] = 0
+				benchmark_time[k][1] = 0
+				benchmark_time[k][2] = 0
+				benchmark_time[k][3] = 0
+				benchmark_time[k][4] = 0
 			}
-			elapsed = int(time.Since(start)) / loops
-			benchmark_time[k][6] = int(elapsed)
-			log.Printf("done with test 6")
+
+			if file_measurement == true {
+				//Upload a file to the server
+				start := time.Now()
+				for i := 0; i < loops; i++ {
+					for j := 0; j < amountSmalldata; j++ {
+						uploadclient(http_url, "/upload", "../httpclient/foruploadfiles/"+filename)
+					}
+				}
+				elapsed := int(time.Since(start)) / loops
+				benchmark_time[k][5] = int(elapsed)
+				log.Printf("done with test 5")
+				//Download a file from the server
+				start = time.Now()
+				for i := 0; i < loops; i++ {
+					for j := 0; j < amountSmalldata; j++ {
+						downloadclient(http_url+"/download?filename="+filename, "../httpclient/downloadedfiles/"+filename)
+					}
+				}
+				elapsed = int(time.Since(start)) / loops
+				benchmark_time[k][6] = int(elapsed)
+				log.Printf("done with test 6")
+			} else {
+				benchmark_time[k][5] = 0
+				benchmark_time[k][6] = 0
+			}
 		}
 		log.Printf("done with benchmark run %v...\n", k)
 	}
 
+	//print benchmark_time to a file
 	if only_size_measurement == false {
-		//print benchmark_time to a file
 		file, err := os.OpenFile("../../results/benchmarking_http_time_"+strconv.Itoa(time.Now().Year())+time.Now().Month().String()+strconv.Itoa(time.Now().Day())+"_"+strconv.Itoa(time.Now().Hour())+"_"+strconv.Itoa(time.Now().Minute())+"_"+strconv.Itoa(time.Now().Second())+".txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			log.Fatalf("failed creating file: %s", err)
