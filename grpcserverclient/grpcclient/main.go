@@ -6,6 +6,7 @@ import (
 	"flag"
 	"io/ioutil"
 	"log"
+	"math"
 	"os"
 	"strconv"
 	"sync"
@@ -23,13 +24,13 @@ func main() {
 	//flags
 	address_flag := flag.String("address", "localhost:8080", "the address")
 	filename_flag := flag.String("filename", "Star_Wars_Style_A_poster_1977.webp", "the name of the file for uploading and downloading")
-	size_bigdata_flag := flag.Int("size_bigdata", 354, "in megabytes (size when data gets encrpyted in grpc protobuf)")
+	size_bigdata_flag := flag.Int("size_bigdata", 100, "in megabytes (size when data gets encrpyted in grpc protobuf)")
 	runs_flag := flag.Int("runs", 1, "number of runs")
 	loops_flag := flag.Int("loops", 50, "number of repeated messages before time measurement and taking average. Gives a more accurate result")
 	amountSmalldata_flag := flag.Int("amountSmalldata", 100, "amount of small-data-messages for sending a lot of small messages simultaniously or after one another")
 	only_size_measurement_flag := flag.Bool("only_size_measurement", false, "if true, skips the time measurements")
 	random_data_measurement_flag := flag.Bool("activates random data measurement", true, "if false, skips the random data measurments")
-	file_measurement_flag := flag.Bool("activates file measurement", true, "if false, skips the file measurments")
+	file_measurement_flag := flag.Bool("activates file measurement", false, "if false, skips the file measurments")
 	//stream_measurement_flag := flag.Bool("activates stream measurement", true, "if false, skips the stream measurments")
 	flag.Parse()
 	address := *address_flag
@@ -43,7 +44,7 @@ func main() {
 	file_measurement := *file_measurement_flag
 	//stream_measurement := *stream_measurement_flag
 
-	log.Printf("address: %v, size_bigdata: %v, runs: %v, loops: %v, amountSmalldata: %v, only_size_measurement: %v", address, size_bigdata, runs, loops, amountSmalldata, only_size_measurement)
+	log.Printf("address: %v, size_bigdata: %v, runs: %v, loops: %v, amountSmalldata: %v, only_size_measurement: %v, random_data_measurement: %v, file_measurement: %v", address, size_bigdata, runs, loops, amountSmalldata, only_size_measurement, random_data_measurement, file_measurement)
 
 	//set dial
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -82,9 +83,12 @@ func main() {
 		//create big data
 		log.Printf("creating bigdata ...\n")
 		bigdata_proto := []*pb.RandomData{}
+		var length_bigdata_float, slope float64
 		var length_bigdata int
-		length_bigdata = (size_bigdata*1000000 - 17) / 3524 //note: determined empirically
-		bigdata_proto = konstruktor.CreateBigData_proto(500, length_bigdata)
+		slope = 291.8782939
+		length_bigdata_float = math.Round((float64(size_bigdata)*1000000 - 4) / slope) //note: determined empirically
+		length_bigdata = int(length_bigdata_float)
+		bigdata_proto = konstruktor.CreateBigData_proto(7, length_bigdata)
 		req_bigdata := &pb.BigData{Content: bigdata_proto}
 		log.Printf("finished creating bigdata. client is ready.\n")
 

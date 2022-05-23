@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"math"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -24,7 +25,7 @@ func main() {
 	//flags
 	http_url_flag := flag.String("http_url", "http://localhost:4040", "the address")
 	filename_flag := flag.String("filename", "Star_Wars_Style_A_poster_1977.webp", "the name of the file for uploading and downloading")
-	size_bigdata_flag := flag.Int("size_bigdata", 354, "in megabytes (size when data gets encrpyted in grpc protobuf)")
+	size_bigdata_flag := flag.Int("size_bigdata", 100, "in megabytes (size when data gets encrpyted in grpc protobuf)")
 	runs_flag := flag.Int("runs", 50, "number of runs")
 	loops_flag := flag.Int("loops", 10, "number of repeated messages before time measurement and taking average. Gives a more accurate result")
 	amountSmalldata_flag := flag.Int("amountSmalldata", 100, "amount of small-data-messages for sending a lot of small messages simultaniously or after one another")
@@ -44,7 +45,7 @@ func main() {
 	file_measurement := *file_measurement_flag
 	//stream_measurement := *stream_measurement_flag
 
-	log.Printf("http_url: %v, size_bigdata: %v, runs: %v, loops: %v, amountSmalldata: %v, only_size_measurement: %v", http_url, size_bigdata, runs, loops, amountSmalldata, only_size_measurement)
+	log.Printf("http_url: %v, size_bigdata: %v, runs: %v, loops: %v, amountSmalldata: %v, only_size_measurement: %v, random_data_measurement: %v, file_measurement: %v", http_url, size_bigdata, runs, loops, amountSmalldata, only_size_measurement, random_data_measurement, file_measurement)
 
 	//define variables to save benchmark results
 	benchmark_time_entries := 7
@@ -65,9 +66,12 @@ func main() {
 		smalldata := konstruktor.CreateBigData(1, 1)
 		//create big data
 		log.Printf("creating bigdata ...\n")
+		var length_bigdata_float, slope float64
 		var length_bigdata int
-		length_bigdata = (size_bigdata*1000000 - 17) / 3524 //note: determined empirically
-		bigdata := konstruktor.CreateBigData(500, length_bigdata)
+		slope = 291.8782939
+		length_bigdata_float = math.Round((float64(size_bigdata)*1000000 - 4) / slope) //note: determined empirically
+		length_bigdata = int(length_bigdata_float)
+		bigdata := konstruktor.CreateBigData(7, length_bigdata)
 		log.Printf("finished creating bigdata. server is ready.\n")
 
 		log.Printf("starting benchmark run %v...\n", k)

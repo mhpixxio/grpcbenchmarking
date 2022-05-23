@@ -20,7 +20,7 @@ func main() {
 
 	//flags
 	port_address_flag := flag.String("port_address", ":4040", "the port_address")
-	size_bigdata_flag := flag.Int("size_bigdata", 354, "in megabytes (size when data gets encrpyted in grpc protobuf)")
+	size_bigdata_flag := flag.Int("size_bigdata", 100, "in megabytes (size when data gets encrpyted in grpc protobuf)")
 	flag.Parse()
 	port_address := *port_address_flag
 	size_bigdata := *size_bigdata_flag
@@ -34,12 +34,15 @@ func main() {
 	http.HandleFunc("/download", downloadHandler)
 
 	//create small data
-	smalldata = konstruktor.CreateBigData(1, 1)
+	smalldata := konstruktor.CreateBigData(1, 1)
 	//create big data
 	log.Printf("creating bigdata ...\n")
+	var length_bigdata_float, slope float64
 	var length_bigdata int
-	length_bigdata = (size_bigdata*1000000 - 17) / 3524 //note: determined empirically
-	bigdata = konstruktor.CreateBigData(500, length_bigdata)
+	slope = 291.8782939
+	length_bigdata_float = math.Round((float64(size_bigdata)*1000000 - 4) / slope) //note: determined empirically
+	length_bigdata = int(length_bigdata_float)
+	bigdata := konstruktor.CreateBigData(7, length_bigdata)
 	log.Printf("finished creating bigdata. server is ready.\n")
 
 	//start server
