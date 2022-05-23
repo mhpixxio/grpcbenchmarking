@@ -168,29 +168,23 @@ func main() {
 			if random_data_measurement == true {
 				//Sending Big Data to Server
 				start := time.Now()
-				for i := 0; i < loops; i++ {
-					//call service
-					responseBigDataFunc, err := client_bigdata.BigDataFunc(context.Background(), &pb.BigDataRequest{Bigdatareq: req_bigdata, Returnbigdata: false}, calloption_recv)
-					if err != nil || responseBigDataFunc == nil {
-						log.Fatalf("could not use service: %v", err)
-					}
+				responseBigDataFunc, err := client_bigdata.BigDataFunc(context.Background(), &pb.BigDataRequest{Bigdatareq: req_bigdata, Returnbigdata: false}, calloption_recv)
+				if err != nil || responseBigDataFunc == nil {
+					log.Fatalf("could not use service: %v", err)
 				}
-				elapsed := int(time.Since(start)) / loops
+				elapsed := int(time.Since(start))
 				benchmark_time[k][0] = int(elapsed)
 				log.Printf("done with test 0")
 				//Receiving Big Data from Server
 				start = time.Now()
-				for i := 0; i < loops; i++ {
-					//call service
-					responseBigDataFunc, err := client_bigdata.BigDataFunc(context.Background(), &pb.BigDataRequest{Bigdatareq: req_smalldata, Returnbigdata: true}, calloption_recv)
-					if err != nil || responseBigDataFunc == nil {
-						log.Fatalf("could not use service: %v", err)
-					}
+				responseBigDataFunc, err = client_bigdata.BigDataFunc(context.Background(), &pb.BigDataRequest{Bigdatareq: req_smalldata, Returnbigdata: true}, calloption_recv)
+				if err != nil || responseBigDataFunc == nil {
+					log.Fatalf("could not use service: %v", err)
 				}
-				elapsed = int(time.Since(start)) / loops
+				elapsed = int(time.Since(start))
 				benchmark_time[k][1] = int(elapsed)
 				log.Printf("done with test 1")
-				//Sending Small Data to Server and Recieving Small Data
+				//Sending Small Data to Server and Receiving Small Data
 				start = time.Now()
 				for i := 0; i < loops; i++ {
 					//call service
@@ -253,35 +247,25 @@ func main() {
 			if file_measurement == true {
 				//Upload a file to the server
 				start := time.Now()
-				for i := 0; i < loops; i++ {
-					for j := 0; j < amountSmalldata; j++ {
-						//call upload
-						data, err := ioutil.ReadFile("../grpcclient/foruploadfiles/" + filename)
-						responseUpload, err := client_upload.UploadFunc(context.Background(), &pb.UploadRequest{Filebytes: data, Filename: filename}, calloption_recv)
-						if err != nil || responseUpload == nil {
-							log.Fatalf("could not use service: %v", err)
-						}
-					}
+				data, err := ioutil.ReadFile("../grpcclient/foruploadfiles/" + filename)
+				responseUpload, err := client_upload.UploadFunc(context.Background(), &pb.UploadRequest{Filebytes: data, Filename: filename}, calloption_recv)
+				if err != nil || responseUpload == nil {
+					log.Fatalf("could not use service: %v", err)
 				}
-				elapsed := int(time.Since(start)) / loops
+				elapsed := int(time.Since(start))
 				benchmark_time[k][5] = int(elapsed)
 				log.Printf("done with test 5")
 				//Download a file from the server
 				start = time.Now()
-				for i := 0; i < loops; i++ {
-					for j := 0; j < amountSmalldata; j++ {
-						//call download
-						responseDownload, err := client_download.DownloadFunc(context.Background(), &pb.DownloadRequest{Filename: filename}, calloption_recv)
-						if err != nil || responseDownload == nil {
-							log.Fatalf("could not use service: %v", err)
-						}
-						err = ioutil.WriteFile("../grpcclient/downloadedfiles/"+filename, responseDownload.Filebytes, 0644)
-						if err != nil {
-							log.Fatal(err)
-						}
-					}
+				responseDownload, err := client_download.DownloadFunc(context.Background(), &pb.DownloadRequest{Filename: filename}, calloption_recv)
+				if err != nil || responseDownload == nil {
+					log.Fatalf("could not use service: %v", err)
 				}
-				elapsed = int(time.Since(start)) / loops
+				err = ioutil.WriteFile("../grpcclient/downloadedfiles/"+filename, responseDownload.Filebytes, 0644)
+				if err != nil {
+					log.Fatal(err)
+				}
+				elapsed = int(time.Since(start))
 				benchmark_time[k][6] = int(elapsed)
 				log.Printf("done with test 6")
 			} else {

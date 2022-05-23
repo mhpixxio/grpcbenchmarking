@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"os"
 
@@ -34,7 +35,7 @@ func main() {
 	http.HandleFunc("/download", downloadHandler)
 
 	//create small data
-	smalldata := konstruktor.CreateBigData(1, 1)
+	smalldata = konstruktor.CreateBigData(1, 1)
 	//create big data
 	log.Printf("creating bigdata ...\n")
 	var length_bigdata_float, slope float64
@@ -42,7 +43,7 @@ func main() {
 	slope = 291.8782939
 	length_bigdata_float = math.Round((float64(size_bigdata)*1000000 - 4) / slope) //note: determined empirically
 	length_bigdata = int(length_bigdata_float)
-	bigdata := konstruktor.CreateBigData(7, length_bigdata)
+	bigdata = konstruktor.CreateBigData(7, length_bigdata)
 	log.Printf("finished creating bigdata. server is ready.\n")
 
 	//start server

@@ -26,12 +26,12 @@ func main() {
 	http_url_flag := flag.String("http_url", "http://localhost:4040", "the address")
 	filename_flag := flag.String("filename", "Star_Wars_Style_A_poster_1977.webp", "the name of the file for uploading and downloading")
 	size_bigdata_flag := flag.Int("size_bigdata", 100, "in megabytes (size when data gets encrpyted in grpc protobuf)")
-	runs_flag := flag.Int("runs", 50, "number of runs")
-	loops_flag := flag.Int("loops", 10, "number of repeated messages before time measurement and taking average. Gives a more accurate result")
+	runs_flag := flag.Int("runs", 1, "number of runs")
+	loops_flag := flag.Int("loops", 10, "number of repeated messages for small data before time measurement and taking average. Gives a more accurate result")
 	amountSmalldata_flag := flag.Int("amountSmalldata", 100, "amount of small-data-messages for sending a lot of small messages simultaniously or after one another")
 	only_size_measurement_flag := flag.Bool("only_size_measurement", false, "if true, skips the time measurments")
 	random_data_measurement_flag := flag.Bool("activates random data measurement", true, "if false, skips the random data measurments")
-	file_measurement_flag := flag.Bool("activates file measurement", true, "if false, skips the file measurments")
+	file_measurement_flag := flag.Bool("activates file measurement", false, "if false, skips the file measurments")
 	//stream_measurement_flag := flag.Bool("activates stream measurement", true, "if false, skips the stream measurments")
 	flag.Parse()
 	http_url := *http_url_flag
@@ -125,18 +125,14 @@ func main() {
 			if random_data_measurement == true {
 				//Sending Big Data to Server
 				start := time.Now()
-				for i := 0; i < loops; i++ {
-					jsonclient(http_url, "/postjson", bigdata)
-				}
-				elapsed := int(time.Since(start)) / loops
+				jsonclient(http_url, "/postjson", bigdata)
+				elapsed := int(time.Since(start))
 				benchmark_time[k][0] = int(elapsed)
 				log.Printf("done with test 0")
 				//Receiving Big Data from Server
 				start = time.Now()
-				for i := 0; i < loops; i++ {
-					jsonclient(http_url, "/getjson", smalldata)
-				}
-				elapsed = int(time.Since(start)) / loops
+				jsonclient(http_url, "/getjson", smalldata)
+				elapsed = int(time.Since(start))
 				benchmark_time[k][1] = int(elapsed)
 				log.Printf("done with test 1")
 				//Sending Small Data to Server and Receiving Small Data
@@ -184,22 +180,14 @@ func main() {
 			if file_measurement == true {
 				//Upload a file to the server
 				start := time.Now()
-				for i := 0; i < loops; i++ {
-					for j := 0; j < amountSmalldata; j++ {
-						uploadclient(http_url, "/upload", "../httpclient/foruploadfiles/"+filename)
-					}
-				}
-				elapsed := int(time.Since(start)) / loops
+				uploadclient(http_url, "/upload", "../httpclient/foruploadfiles/"+filename)
+				elapsed := int(time.Since(start))
 				benchmark_time[k][5] = int(elapsed)
 				log.Printf("done with test 5")
 				//Download a file from the server
 				start = time.Now()
-				for i := 0; i < loops; i++ {
-					for j := 0; j < amountSmalldata; j++ {
-						downloadclient(http_url+"/download?filename="+filename, "../httpclient/downloadedfiles/"+filename)
-					}
-				}
-				elapsed = int(time.Since(start)) / loops
+				downloadclient(http_url+"/download?filename="+filename, "../httpclient/downloadedfiles/"+filename)
+				elapsed = int(time.Since(start))
 				benchmark_time[k][6] = int(elapsed)
 				log.Printf("done with test 6")
 			} else {
