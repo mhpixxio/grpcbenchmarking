@@ -26,26 +26,26 @@ func main() {
 	http_url_flag := flag.String("http_url", "http://localhost:4040", "the address")
 	filename_flag := flag.String("filename", "Star_Wars_Style_A_poster_1977.webp", "the name of the file for uploading and downloading")
 	size_bigdata_flag := flag.Int("size_bigdata", 100, "in megabytes (size when data gets encrpyted in grpc protobuf)")
-	runs_flag := flag.Int("runs", 1, "number of runs")
+	runs_flag := flag.Int("runs", 50, "number of runs")
 	loops_flag := flag.Int("loops", 10, "number of repeated messages for small data before time measurement and taking average. Gives a more accurate result")
-	amountSmalldata_flag := flag.Int("amountSmalldata", 100, "amount of small-data-messages for sending a lot of small messages simultaniously or after one another")
+	amount_smalldata_flag := flag.Int("amount_smalldata", 100, "amount of small-data-messages for sending a lot of small messages simultaniously or after one another")
 	only_size_measurement_flag := flag.Bool("only_size_measurement", false, "if true, skips the time measurments")
-	random_data_measurement_flag := flag.Bool("activates random data measurement", true, "if false, skips the random data measurments")
-	file_measurement_flag := flag.Bool("activates file measurement", false, "if false, skips the file measurments")
-	//stream_measurement_flag := flag.Bool("activates stream measurement", true, "if false, skips the stream measurments")
+	random_data_measurement_flag := flag.Bool("random_data_measurement", true, "if false, skips the random data measurements")
+	file_measurement_flag := flag.Bool("file_measurement", false, "if false, skips the file measurements")
+	stream_measurement_flag := flag.Bool("stream_measurement", false, "if false, skips the stream measurements")
 	flag.Parse()
 	http_url := *http_url_flag
 	filename := *filename_flag
 	size_bigdata := *size_bigdata_flag
 	runs := *runs_flag
 	loops := *loops_flag
-	amountSmalldata := *amountSmalldata_flag
+	amount_smalldata := *amount_smalldata_flag
 	only_size_measurement := *only_size_measurement_flag
 	random_data_measurement := *random_data_measurement_flag
 	file_measurement := *file_measurement_flag
-	//stream_measurement := *stream_measurement_flag
+	stream_measurement := *stream_measurement_flag
 
-	log.Printf("http_url: %v, size_bigdata: %v, runs: %v, loops: %v, amountSmalldata: %v, only_size_measurement: %v, random_data_measurement: %v, file_measurement: %v", http_url, size_bigdata, runs, loops, amountSmalldata, only_size_measurement, random_data_measurement, file_measurement)
+	log.Printf("http_url: %v, size_bigdata: %v, runs: %v, loops: %v, amount_smalldata: %v, only_size_measurement: %v, random_data_measurement: %v, file_measurement: %v, stream_measurement: %v", http_url, size_bigdata, runs, loops, amount_smalldata, only_size_measurement, random_data_measurement, file_measurement, stream_measurement)
 
 	//define variables to save benchmark results
 	benchmark_time_entries := 7
@@ -147,8 +147,8 @@ func main() {
 				start = time.Now()
 				var wg sync.WaitGroup
 				for i := 0; i < loops; i++ {
-					wg.Add(amountSmalldata)
-					for j := 0; j < amountSmalldata; j++ {
+					wg.Add(amount_smalldata)
+					for j := 0; j < amount_smalldata; j++ {
 						go func() {
 							jsonclient(http_url, "/postjson", smalldata)
 							defer wg.Done()
@@ -162,7 +162,7 @@ func main() {
 				//Sending a lot of Small Data to Server after one another
 				start = time.Now()
 				for i := 0; i < loops; i++ {
-					for j := 0; j < amountSmalldata; j++ {
+					for j := 0; j < amount_smalldata; j++ {
 						jsonclient(http_url, "/postjson", smalldata)
 					}
 				}

@@ -3,8 +3,8 @@ module grpcserver
 go 1.18
 
 require (
-	github.com/mhpixxio/konstruktor v0.0.0-20220503145706-86355d3fc1b3
-	github.com/mhpixxio/pb v0.0.0-20220517132220-ea1e154cd531
+	github.com/mhpixxio/konstruktor v0.0.0-20220523161414-2ca4daa63117
+	github.com/mhpixxio/pb v0.0.0-20220523102054-3ee677cd9594
 	google.golang.org/grpc v1.46.0
 )
 
