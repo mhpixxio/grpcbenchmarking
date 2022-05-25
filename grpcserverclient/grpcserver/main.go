@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"flag"
+	"io"
 	"io/ioutil"
 	"log"
 	"math"
 	"net"
+	"os"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -17,6 +19,8 @@ import (
 
 var res_bigdata = &pb.BigData{}
 var res_smalldata = &pb.BigData{}
+var size_bigdata int
+var filename_clientsidestreaming string
 
 type server_text struct {
 	pb.TextServiceServer
@@ -30,6 +34,12 @@ type server_upload struct {
 type server_download struct {
 	pb.DownloadServiceServer
 }
+type server_serversidestreaming struct {
+	pb.ServerSideStreamingServiceServer
+}
+type server_clientsidestreaming struct {
+	pb.ClientSideStreamingServiceServer
+}
 
 func main() {
 
@@ -38,7 +48,7 @@ func main() {
 	size_bigdata_flag := flag.Int("size_bigdata", 100, "in megabytes (size when data gets encrpyted in grpc protobuf)")
 	flag.Parse()
 	port_address := *port_address_flag
-	size_bigdata := *size_bigdata_flag
+	size_bigdata = *size_bigdata_flag
 	log.Printf("port_address: %v, size_bigdata: %v", port_address, size_bigdata)
 
 	//start server
@@ -63,14 +73,17 @@ func main() {
 	res_bigdata = &pb.BigData{Content: bigdata_proto}
 	log.Printf("finished creating bigdata. server is ready.\n")
 	//define calloptions
-	max_size := size_bigdata * 1000000 * 2 //in bytes
+	max_size := size_bigdata * 1000000 * 2 * 100 //in bytes
 	calloption_recv := grpc.MaxRecvMsgSize(max_size)
+	calloption_send := grpc.MaxSendMsgSize(max_size)
 	//start services
-	s := grpc.NewServer(calloption_recv)
+	s := grpc.NewServer(calloption_recv, calloption_send)
 	pb.RegisterTextServiceServer(s, &server_text{})
 	pb.RegisterBigDataServiceServer(s, &server_bigdata{})
 	pb.RegisterUploadServiceServer(s, &server_upload{})
 	pb.RegisterDownloadServiceServer(s, &server_download{})
+	pb.RegisterServerSideStreamingServiceServer(s, &server_serversidestreaming{})
+	pb.RegisterClientSideStreamingServiceServer(s, &server_clientsidestreaming{})
 	reflection.Register(s)
 	if err := s.Serve(listener); err != nil {
 		log.Fatalf("failed to serve: %v", err)
@@ -116,4 +129,68 @@ func (s *server_download) DownloadFunc(ctx context.Context, request *pb.Download
 	}
 	//return the response
 	return &pb.DownloadResponse{Filebytes: data}, nil
+}
+
+func (s *server_serversidestreaming) ServerSideStreamingFunc(request *pb.StreamingRequestServerSide, stream pb.ServerSideStreamingService_ServerSideStreamingFuncServer) error {
+	filename := request.Filename
+	buffersize := request.Buffersize
+	file, err := os.Open("../grpcserver/uploadedfiles/" + filename)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	defer file.Close()
+	buffer := make([]byte, buffersize)
+	for {
+		_, err := file.Read(buffer)
+		if err != nil {
+			if err != io.EOF {
+				log.Println(err)
+				return err
+			}
+			break
+		}
+		stream.Send(&pb.Bytesmessage{Bytesmes: buffer})
+	}
+	return nil
+}
+
+func (s *server_clientsidestreaming) ClientSideStreamingFilenameFunc(ctx context.Context, request *pb.StreamingRequestClientSide) (*pb.Successmessage, error) {
+	filename_clientsidestreaming = request.Filename
+	return &pb.Successmessage{Successmes: true}, nil
+}
+
+func (s *server_clientsidestreaming) ClientSideStreamingFunc(stream pb.ClientSideStreamingService_ClientSideStreamingFuncServer) error {
+	for {
+		streaming_file_address := "../grpcserver/uploadedfiles/" + filename_clientsidestreaming
+		f, err := os.Create(streaming_file_address)
+		if err != nil {
+			log.Fatalf("error: %v", err)
+		}
+		defer f.Close()
+		for {
+			data, err := stream.Recv()
+			if err == io.EOF {
+				return stream.SendAndClose(&pb.Successmessage{Successmes: true})
+				break
+			}
+			if err != nil {
+				log.Fatalf("error: %v", err)
+			}
+			// If the file doesn't exist, create it, or append to the file
+			f_2, err := os.OpenFile(streaming_file_address, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if _, err := f_2.Write(data.Bytesmes); err != nil {
+				log.Fatal(err)
+			}
+			if err := f_2.Close(); err != nil {
+				log.Fatal(err)
+			}
+		}
+		if err != nil {
+			return err
+		}
+	}
 }

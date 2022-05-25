@@ -128,13 +128,13 @@ func main() {
 				jsonclient(http_url, "/postjson", bigdata)
 				elapsed := int(time.Since(start))
 				benchmark_time[k][0] = int(elapsed)
-				log.Printf("done with test 0")
+				log.Printf("done with time measurement 0")
 				//Receiving Big Data from Server
 				start = time.Now()
 				jsonclient(http_url, "/getjson", smalldata)
 				elapsed = int(time.Since(start))
 				benchmark_time[k][1] = int(elapsed)
-				log.Printf("done with test 1")
+				log.Printf("done with time measurement 1")
 				//Sending Small Data to Server and Receiving Small Data
 				start = time.Now()
 				for i := 0; i < loops; i++ {
@@ -142,7 +142,7 @@ func main() {
 				}
 				elapsed = int(time.Since(start)) / loops
 				benchmark_time[k][2] = int(elapsed)
-				log.Printf("done with test 2")
+				log.Printf("done with time measurement 2")
 				//Sending a lot of Small Data to Server simultaniously
 				start = time.Now()
 				var wg sync.WaitGroup
@@ -158,7 +158,7 @@ func main() {
 				}
 				elapsed = int(time.Since(start)) / loops
 				benchmark_time[k][3] = int(elapsed)
-				log.Printf("done with test 3")
+				log.Printf("done with time measurement 3")
 				//Sending a lot of Small Data to Server after one another
 				start = time.Now()
 				for i := 0; i < loops; i++ {
@@ -168,7 +168,7 @@ func main() {
 				}
 				elapsed = int(time.Since(start)) / loops
 				benchmark_time[k][4] = int(elapsed)
-				log.Printf("done with test 4")
+				log.Printf("done with time measurement 4")
 			} else {
 				benchmark_time[k][0] = 0
 				benchmark_time[k][1] = 0
@@ -183,13 +183,13 @@ func main() {
 				uploadclient(http_url, "/upload", "../httpclient/foruploadfiles/"+filename)
 				elapsed := int(time.Since(start))
 				benchmark_time[k][5] = int(elapsed)
-				log.Printf("done with test 5")
+				log.Printf("done with time measurement 5")
 				//Download a file from the server
 				start = time.Now()
 				downloadclient(http_url+"/download?filename="+filename, "../httpclient/downloadedfiles/"+filename)
 				elapsed = int(time.Since(start))
 				benchmark_time[k][6] = int(elapsed)
-				log.Printf("done with test 6")
+				log.Printf("done with time measurement 6")
 			} else {
 				benchmark_time[k][5] = 0
 				benchmark_time[k][6] = 0

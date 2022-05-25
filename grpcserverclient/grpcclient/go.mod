@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/mhpixxio/konstruktor v0.0.0-20220523161414-2ca4daa63117
-	github.com/mhpixxio/pb v0.0.0-20220523102054-3ee677cd9594
+	github.com/mhpixxio/pb v0.0.0-20220525105051-218107bd77f4
 	google.golang.org/grpc v1.46.0
 	google.golang.org/protobuf v1.28.0
 )

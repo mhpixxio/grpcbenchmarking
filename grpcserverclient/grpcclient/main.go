@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"flag"
+	"io"
 	"io/ioutil"
 	"log"
 	"math"
@@ -23,7 +24,8 @@ func main() {
 
 	//flags
 	address_flag := flag.String("address", "localhost:8080", "the address")
-	filename_flag := flag.String("filename", "Star_Wars_Style_A_poster_1977.webp", "the name of the file for uploading and downloading")
+	filename_filetransfer_flag := flag.String("filename_filetransfer", "filetransfer_Star_Wars_Style_A_poster_1977.webp", "the name of the file for uploading and downloading")
+	filename_streaming_flag := flag.String("filename_streaming", "streaming_Star_Wars_Style_A_poster_1977.webp", "the name of the file for streaming")
 	size_bigdata_flag := flag.Int("size_bigdata", 100, "in megabytes (size when data gets encrpyted in grpc protobuf)")
 	runs_flag := flag.Int("runs", 50, "number of runs")
 	loops_flag := flag.Int("loops", 10, "number of repeated messages for small data before time measurement and taking average. Gives a more accurate result")
@@ -32,9 +34,11 @@ func main() {
 	random_data_measurement_flag := flag.Bool("random_data_measurement", true, "if false, skips the random data measurements")
 	file_measurement_flag := flag.Bool("file_measurement", false, "if false, skips the file measurements")
 	stream_measurement_flag := flag.Bool("stream_measurement", false, "if false, skips the stream measurements")
+	buffersize_streaming_flag := flag.Int("buffersize_streaming", 100, "buffersize for streaming")
 	flag.Parse()
 	address := *address_flag
-	filename := *filename_flag
+	filename_filetransfer := *filename_filetransfer_flag
+	filename_streaming := *filename_streaming_flag
 	size_bigdata := *size_bigdata_flag
 	runs := *runs_flag
 	loops := *loops_flag
@@ -43,8 +47,9 @@ func main() {
 	random_data_measurement := *random_data_measurement_flag
 	file_measurement := *file_measurement_flag
 	stream_measurement := *stream_measurement_flag
+	buffersize_streaming := *buffersize_streaming_flag
 
-	log.Printf("address: %v, size_bigdata: %v, runs: %v, loops: %v, amount_smalldata: %v, only_size_measurement: %v, random_data_measurement: %v, file_measurement: %v, stream_measurement: %v", address, size_bigdata, runs, loops, amount_smalldata, only_size_measurement, random_data_measurement, file_measurement, stream_measurement)
+	log.Printf("address: %v, size_bigdata: %v, runs: %v, loops: %v, amount_smalldata: %v, only_size_measurement: %v, random_data_measurement: %v, file_measurement: %v, stream_measurement: %v, buffersize_streaming: %v", address, size_bigdata, runs, loops, amount_smalldata, only_size_measurement, random_data_measurement, file_measurement, stream_measurement, buffersize_streaming)
 
 	//set dial
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -57,12 +62,18 @@ func main() {
 	client_bigdata := pb.NewBigDataServiceClient(conn)
 	client_upload := pb.NewUploadServiceClient(conn)
 	client_download := pb.NewDownloadServiceClient(conn)
+	client_serversidestreaming := pb.NewServerSideStreamingServiceClient(conn)
+	client_clientsidestreaming := pb.NewClientSideStreamingServiceClient(conn)
 	//define calloptions
 	max_size := size_bigdata * 1000000 * 2 //in bytes
+	if max_size < 10000000 {
+		max_size = 10000000
+	}
 	calloption_recv := grpc.MaxCallRecvMsgSize(max_size)
+	calloption_send := grpc.MaxCallSendMsgSize(max_size)
 
 	//define variables to save benchmark results
-	benchmark_time_entries := 7
+	benchmark_time_entries := 9
 	benchmark_time := make([][]int, runs)
 	for i := range benchmark_time {
 		benchmark_time[i] = make([]int, benchmark_time_entries)
@@ -106,14 +117,14 @@ func main() {
 		//Measuring the Sizes of transfered data
 		if random_data_measurement == true {
 			//call service with small data
-			responseBigDataFunc, err := client_bigdata.BigDataFunc(context.Background(), &pb.BigDataRequest{Bigdatareq: req_smalldata, Returnbigdata: false}, calloption_recv)
+			responseBigDataFunc, err := client_bigdata.BigDataFunc(context.Background(), &pb.BigDataRequest{Bigdatareq: req_smalldata, Returnbigdata: false}, calloption_recv, calloption_send)
 			if err != nil || responseBigDataFunc == nil {
 				log.Fatalf("could not use service: %v", err)
 			}
 			requestsize_small := proto.Size(&pb.BigDataRequest{Bigdatareq: req_smalldata, Returnbigdata: false})
 			responsesize_small := proto.Size(responseBigDataFunc)
 			//call service with big data
-			responseBigDataFunc, err = client_bigdata.BigDataFunc(context.Background(), &pb.BigDataRequest{Bigdatareq: req_bigdata, Returnbigdata: true}, calloption_recv)
+			responseBigDataFunc, err = client_bigdata.BigDataFunc(context.Background(), &pb.BigDataRequest{Bigdatareq: req_bigdata, Returnbigdata: true}, calloption_recv, calloption_send)
 			if err != nil || responseBigDataFunc == nil {
 				log.Fatalf("could not use service: %v", err)
 			}
@@ -131,23 +142,23 @@ func main() {
 		}
 		if file_measurement == true {
 			//call upload
-			data, err := ioutil.ReadFile("../grpcclient/foruploadfiles/" + filename)
-			responseUpload, err := client_upload.UploadFunc(context.Background(), &pb.UploadRequest{Filebytes: data, Filename: filename}, calloption_recv)
+			data, err := ioutil.ReadFile("../grpcclient/foruploadfiles/" + filename_filetransfer)
+			responseUpload, err := client_upload.UploadFunc(context.Background(), &pb.UploadRequest{Filebytes: data, Filename: filename_filetransfer}, calloption_recv, calloption_send)
 			if err != nil || responseUpload == nil {
 				log.Fatalf("could not use service: %v", err)
 			}
-			requestsize_upload := proto.Size(&pb.UploadRequest{Filebytes: data, Filename: filename})
+			requestsize_upload := proto.Size(&pb.UploadRequest{Filebytes: data, Filename: filename_filetransfer})
 			responsesize_upload := proto.Size(responseUpload)
 			//call download
-			responseDownload, err := client_download.DownloadFunc(context.Background(), &pb.DownloadRequest{Filename: filename}, calloption_recv)
+			responseDownload, err := client_download.DownloadFunc(context.Background(), &pb.DownloadRequest{Filename: filename_filetransfer}, calloption_recv, calloption_send)
 			if err != nil || responseDownload == nil {
 				log.Fatalf("could not use service: %v", err)
 			}
-			err = ioutil.WriteFile("../grpcclient/downloadedfiles/"+filename, responseDownload.Filebytes, 0644)
+			err = ioutil.WriteFile("../grpcclient/downloadedfiles/"+filename_filetransfer, responseDownload.Filebytes, 0644)
 			if err != nil {
 				log.Fatal(err)
 			}
-			requestsize_download := proto.Size(&pb.DownloadRequest{Filename: filename})
+			requestsize_download := proto.Size(&pb.DownloadRequest{Filename: filename_filetransfer})
 			responsesize_download := proto.Size(responseDownload)
 			benchmark_size[k][4] = requestsize_upload
 			benchmark_size[k][5] = responsesize_upload
@@ -168,34 +179,34 @@ func main() {
 			if random_data_measurement == true {
 				//Sending Big Data to Server
 				start := time.Now()
-				responseBigDataFunc, err := client_bigdata.BigDataFunc(context.Background(), &pb.BigDataRequest{Bigdatareq: req_bigdata, Returnbigdata: false}, calloption_recv)
+				responseBigDataFunc, err := client_bigdata.BigDataFunc(context.Background(), &pb.BigDataRequest{Bigdatareq: req_bigdata, Returnbigdata: false}, calloption_recv, calloption_send)
 				if err != nil || responseBigDataFunc == nil {
 					log.Fatalf("could not use service: %v", err)
 				}
 				elapsed := int(time.Since(start))
 				benchmark_time[k][0] = int(elapsed)
-				log.Printf("done with test 0")
+				log.Printf("done with time measurement 0")
 				//Receiving Big Data from Server
 				start = time.Now()
-				responseBigDataFunc, err = client_bigdata.BigDataFunc(context.Background(), &pb.BigDataRequest{Bigdatareq: req_smalldata, Returnbigdata: true}, calloption_recv)
+				responseBigDataFunc, err = client_bigdata.BigDataFunc(context.Background(), &pb.BigDataRequest{Bigdatareq: req_smalldata, Returnbigdata: true}, calloption_recv, calloption_send)
 				if err != nil || responseBigDataFunc == nil {
 					log.Fatalf("could not use service: %v", err)
 				}
 				elapsed = int(time.Since(start))
 				benchmark_time[k][1] = int(elapsed)
-				log.Printf("done with test 1")
+				log.Printf("done with time measurement 1")
 				//Sending Small Data to Server and Receiving Small Data
 				start = time.Now()
 				for i := 0; i < loops; i++ {
 					//call service
-					responseBigDataFunc, err := client_bigdata.BigDataFunc(context.Background(), &pb.BigDataRequest{Bigdatareq: req_smalldata, Returnbigdata: false}, calloption_recv)
+					responseBigDataFunc, err := client_bigdata.BigDataFunc(context.Background(), &pb.BigDataRequest{Bigdatareq: req_smalldata, Returnbigdata: false}, calloption_recv, calloption_send)
 					if err != nil || responseBigDataFunc == nil {
 						log.Fatalf("could not use service: %v", err)
 					}
 				}
 				elapsed = int(time.Since(start)) / loops
 				benchmark_time[k][2] = int(elapsed)
-				log.Printf("done with test 2")
+				log.Printf("done with time measurement 2")
 				//Sending a lot of Small Data to Server simultaniously
 				var wg sync.WaitGroup
 				start = time.Now()
@@ -205,7 +216,7 @@ func main() {
 					for j := 0; j < amount_smalldata; j++ {
 						go func() {
 							//call service
-							responseBigDataFunc, err := client_bigdata.BigDataFunc(context.Background(), &pb.BigDataRequest{Bigdatareq: req_smalldata, Returnbigdata: false}, calloption_recv)
+							responseBigDataFunc, err := client_bigdata.BigDataFunc(context.Background(), &pb.BigDataRequest{Bigdatareq: req_smalldata, Returnbigdata: false}, calloption_recv, calloption_send)
 							if err != nil || responseBigDataFunc == nil {
 								log.Fatalf("could not use service: %v", err)
 							}
@@ -220,13 +231,13 @@ func main() {
 				}
 				elapsed = int(time.Since(start)) / loops
 				benchmark_time[k][3] = int(elapsed)
-				log.Printf("done with test 3")
+				log.Printf("done with time measurement 3")
 				//Sending a lot of Small Data to Server after one another
 				start = time.Now()
 				for i := 0; i < loops; i++ {
 					for j := 0; j < amount_smalldata; j++ {
 						//call service
-						responseBigDataFunc, err := client_bigdata.BigDataFunc(context.Background(), &pb.BigDataRequest{Bigdatareq: req_smalldata, Returnbigdata: false}, calloption_recv)
+						responseBigDataFunc, err := client_bigdata.BigDataFunc(context.Background(), &pb.BigDataRequest{Bigdatareq: req_smalldata, Returnbigdata: false}, calloption_recv, calloption_send)
 						if err != nil || responseBigDataFunc == nil {
 							log.Fatalf("could not use service: %v", err)
 						}
@@ -234,7 +245,7 @@ func main() {
 				}
 				elapsed = int(time.Since(start)) / loops
 				benchmark_time[k][4] = int(elapsed)
-				log.Printf("done with test 4")
+				log.Printf("done with time measurement 4")
 			} else {
 				benchmark_time[k][0] = 0
 				benchmark_time[k][1] = 0
@@ -247,30 +258,104 @@ func main() {
 			if file_measurement == true {
 				//Upload a file to the server
 				start := time.Now()
-				data, err := ioutil.ReadFile("../grpcclient/foruploadfiles/" + filename)
-				responseUpload, err := client_upload.UploadFunc(context.Background(), &pb.UploadRequest{Filebytes: data, Filename: filename}, calloption_recv)
+				data, err := ioutil.ReadFile("../grpcclient/foruploadfiles/" + filename_filetransfer)
+				responseUpload, err := client_upload.UploadFunc(context.Background(), &pb.UploadRequest{Filebytes: data, Filename: filename_filetransfer}, calloption_recv, calloption_send)
 				if err != nil || responseUpload == nil {
 					log.Fatalf("could not use service: %v", err)
 				}
 				elapsed := int(time.Since(start))
 				benchmark_time[k][5] = int(elapsed)
-				log.Printf("done with test 5")
+				log.Printf("done with time measurement 5")
 				//Download a file from the server
 				start = time.Now()
-				responseDownload, err := client_download.DownloadFunc(context.Background(), &pb.DownloadRequest{Filename: filename}, calloption_recv)
+				responseDownload, err := client_download.DownloadFunc(context.Background(), &pb.DownloadRequest{Filename: filename_filetransfer}, calloption_recv, calloption_send)
 				if err != nil || responseDownload == nil {
 					log.Fatalf("could not use service: %v", err)
 				}
-				err = ioutil.WriteFile("../grpcclient/downloadedfiles/"+filename, responseDownload.Filebytes, 0644)
+				err = ioutil.WriteFile("../grpcclient/downloadedfiles/"+filename_filetransfer, responseDownload.Filebytes, 0644)
 				if err != nil {
 					log.Fatal(err)
 				}
 				elapsed = int(time.Since(start))
 				benchmark_time[k][6] = int(elapsed)
-				log.Printf("done with test 6")
+				log.Printf("done with time measurement 6")
 			} else {
 				benchmark_time[k][5] = 0
 				benchmark_time[k][6] = 0
+			}
+
+			//Stream Measurements
+			if stream_measurement == true {
+				//Stream data to the server
+				start := time.Now()
+				client_clientsidestreaming.ClientSideStreamingFilenameFunc(context.Background(), &pb.StreamingRequestClientSide{Filename: filename_streaming}, calloption_recv, calloption_send)
+				stream, err := client_clientsidestreaming.ClientSideStreamingFunc(context.Background())
+				if err != nil {
+					log.Fatalf("%v, %v", client_clientsidestreaming, err)
+				}
+				file, err := os.Open("../grpcclient/foruploadfiles/" + filename_streaming)
+				if err != nil {
+					log.Println(err)
+				}
+				defer file.Close()
+				buffer := make([]byte, buffersize_streaming)
+				for {
+					_, err := file.Read(buffer)
+					if err != nil && err != io.EOF {
+						log.Println(err)
+					}
+					if err == io.EOF {
+						break
+					}
+					stream.Send(&pb.Bytesmessage{Bytesmes: buffer})
+				}
+				reply, err := stream.CloseAndRecv()
+				if err != nil {
+					log.Fatalf("%v.CloseAndRecv() got error %v, want %v", stream, err, nil)
+				}
+				if reply.Successmes != true {
+					log.Printf("Successmesage was not true. reply: %v", reply)
+				}
+				log.Printf("done with time measurement 7")
+				elapsed := int(time.Since(start))
+				benchmark_time[k][7] = int(elapsed)
+
+				//Stream data from the server
+				start = time.Now()
+				streaming_file_address := "../grpcclient/downloadedfiles/" + filename_streaming
+				f, err := os.Create(streaming_file_address)
+				if err != nil {
+					log.Fatalf("error: %v", err)
+				}
+				defer f.Close()
+				request_2 := &pb.StreamingRequestServerSide{Filename: filename_streaming, Buffersize: int32(buffersize_streaming)}
+				stream_2, err := client_serversidestreaming.ServerSideStreamingFunc(context.Background(), request_2, calloption_recv, calloption_send)
+				if err != nil {
+					log.Fatal(err)
+				}
+				for {
+					data_2, err := stream_2.Recv()
+					if err == io.EOF {
+						break
+					}
+					if err != nil {
+						log.Fatalf("%v.ListFeatures(_) = _, %v", client_serversidestreaming, err)
+					}
+					// If the file doesn't exist, create it, or append to the file
+					f_2, err := os.OpenFile(streaming_file_address, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+					if err != nil {
+						log.Fatal(err)
+					}
+					if _, err := f_2.Write(data_2.Bytesmes); err != nil {
+						log.Fatal(err)
+					}
+					if err := f_2.Close(); err != nil {
+						log.Fatal(err)
+					}
+				}
+				log.Printf("done with time measurement 8")
+				elapsed = int(time.Since(start))
+				benchmark_time[k][8] = int(elapsed)
 			}
 		}
 		log.Printf("done with benchmark run %v...\n", k)
