@@ -33,6 +33,8 @@ func main() {
 	http.HandleFunc("/getjson", getjsonHandler)
 	http.HandleFunc("/upload", uploadHandler)
 	http.HandleFunc("/download", downloadHandler)
+	http.HandleFunc("/clientsidestreaming", clientsidestreamingHandler)
+	http.HandleFunc("/serversidestreaming", serversidestreamingHandler)
 
 	//create small data
 	smalldata = konstruktor.CreateBigData(1, 1)
@@ -54,6 +56,7 @@ func main() {
 }
 
 func connectiontestHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "Hello World! Connection successful!")
 }
 
@@ -76,6 +79,7 @@ func postjsonHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatalf("error: %v", err)
 		}
+		w.WriteHeader(http.StatusOK)
 		w.Write(json_res)
 	} else {
 		log.Fatalf("did not receive data")
@@ -101,6 +105,7 @@ func getjsonHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatalf("error: %v", err)
 		}
+		w.WriteHeader(http.StatusOK)
 		w.Write(json_res)
 	} else {
 		log.Fatalf("did not receive data")
@@ -108,8 +113,6 @@ func getjsonHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
-	// limit size
-	r.ParseMultipartForm(80 << 9)
 	// retrieve file from FormFile
 	file, handler, err := r.FormFile("file")
 	if err != nil {
@@ -123,8 +126,6 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Fprintf(w, "could not save file")
 		panic(err)
-	} else {
-		fmt.Fprintf(w, "upload successful")
 	}
 	// copy the file to the destination path
 	io.Copy(f, file)
@@ -133,21 +134,56 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
+	w.WriteHeader(http.StatusOK)
 	w.Write(json_res)
 }
 
 func downloadHandler(w http.ResponseWriter, r *http.Request) {
-	// get filename
+	//get filename
 	var filename string = r.FormValue("filename")
-	// search for file
+	//search for file and read whole file
 	fileBytes, err := ioutil.ReadFile("../httpserver/uploadedfiles/" + filename)
 	if err != nil {
 		fmt.Fprintf(w, "could not find file")
 		panic(err)
 	}
-	// send file
+	//send file
 	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Write(fileBytes)
-	fmt.Fprintf(w, "download successful")
+}
+
+func clientsidestreamingHandler(w http.ResponseWriter, r *http.Request) {
+	//get filename
+	var filename string = r.FormValue("filename")
+	//create file
+	out, err := os.Create("../httpserver/uploadedfiles/" + filename)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
+	defer out.Close()
+	w.WriteHeader(http.StatusOK)
+	//write to file
+	_, err = io.Copy(out, r.Body)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
+}
+
+func serversidestreamingHandler(w http.ResponseWriter, r *http.Request) {
+	//get filename
+	var filename string = r.FormValue("filename")
+	//open file
+	file, err := os.Open("../httpserver/uploadedfiles/" + filename)
+	if err != nil {
+		fmt.Fprintf(w, "could not find file")
+		log.Println(err)
+	}
+	defer file.Close()
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	w.WriteHeader(http.StatusOK)
+	//send file as stream
+	_, err = io.Copy(w, file)
+	if err != nil {
+		http.Error(w, "could not read body", http.StatusInternalServerError)
+	}
 }

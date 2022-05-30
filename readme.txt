@@ -50,14 +50,19 @@ gprc client flags:
         the address (default "localhost:8080")
   -amount_smalldata int
         amount of small-data-messages for sending a lot of small messages simultaniously or after one another (default 100)
-  -file_measurement
-        if false, skips the file measurements
-  -filename string
-        the name of the file for uploading and downloading (default "Star_Wars_Style_A_poster_1977.webp")
+  -buffersize_streaming int
+        buffersize for streaming (default 100)
+  -filename_filetransfer string
+        the name of the file for uploading and downloading (default "filetransfer_Star_Wars_Style_A_poster_1977.webp")
+  -filename_streaming string
+        the name of the file for streaming (default "streaming_Star_Wars_Style_A_poster_1977.webp")
+  -filetransfer_measurement
+        if false, skips the file measurements (default false)
   -loops int
-        number of repeated messages for small data before time measurement and taking average. Gives a more accurate result (default 10)
+        number of repeated messages for small data before time measurement and taking average. Gives a more 
+accurate result (default 10)
   -only_size_measurement
-        if true, skips the time measurements
+        if true, skips the time measurements (default false)
   -random_data_measurement
         if false, skips the random data measurements (default true)
   -runs int
@@ -65,7 +70,7 @@ gprc client flags:
   -size_bigdata int
         in megabytes (size when data gets encrpyted in grpc protobuf) (default 100)
   -stream_measurement
-        if false, skips the stream measurements
+        if false, skips the stream measurements (default false)
 http server flags:
   -port_address string
         the port_address (default ":4040")
@@ -75,7 +80,7 @@ http client flags:
   -amount_smalldata int
         amount of small-data-messages for sending a lot of small messages simultaniously or after one another (default 100)
   -file_measurement
-        if false, skips the file measurements
+        if false, skips the file measurements (default false)
   -filename string
         the name of the file for uploading and downloading (default "Star_Wars_Style_A_poster_1977.webp")  
   -http_url string
@@ -83,7 +88,7 @@ http client flags:
   -loops int
         number of repeated messages for small data before time measurement and taking average. Gives a more accurate result (default 10)
   -only_size_measurement
-        if true, skips the time measurments
+        if true, skips the time measurments (default false)
   -random_data_measurement
         if false, skips the random data measurements (default true)
   -runs int
@@ -91,7 +96,7 @@ http client flags:
   -size_bigdata int
         in megabytes (size when data gets encrpyted in grpc protobuf) (default 100)
   -stream_measurement
-        if false, skips the stream measurements
+        if false, skips the stream measurements (default false)
 
 
 +++the data+++

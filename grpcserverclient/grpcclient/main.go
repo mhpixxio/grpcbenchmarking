@@ -22,19 +22,19 @@ import (
 
 func main() {
 
-	//flags
+	//---------------------------------- set the flags ----------------------------------
 	address_flag := flag.String("address", "localhost:8080", "the address")
 	filename_filetransfer_flag := flag.String("filename_filetransfer", "filetransfer_Star_Wars_Style_A_poster_1977.webp", "the name of the file for uploading and downloading")
-	filename_streaming_flag := flag.String("filename_streaming", "streaming_Star_Wars_Style_A_poster_1977.webp", "the name of the file for streaming")
+	filename_streaming_flag := flag.String("filename_streaming", "chunkdata.zip", "the name of the file for streaming")
 	size_bigdata_flag := flag.Int("size_bigdata", 100, "in megabytes (size when data gets encrpyted in grpc protobuf)")
-	runs_flag := flag.Int("runs", 50, "number of runs")
+	runs_flag := flag.Int("runs", 1, "number of runs")
 	loops_flag := flag.Int("loops", 10, "number of repeated messages for small data before time measurement and taking average. Gives a more accurate result")
 	amount_smalldata_flag := flag.Int("amount_smalldata", 100, "amount of small-data-messages for sending a lot of small messages simultaniously or after one another")
 	only_size_measurement_flag := flag.Bool("only_size_measurement", false, "if true, skips the time measurements")
-	random_data_measurement_flag := flag.Bool("random_data_measurement", true, "if false, skips the random data measurements")
-	file_measurement_flag := flag.Bool("file_measurement", false, "if false, skips the file measurements")
-	stream_measurement_flag := flag.Bool("stream_measurement", false, "if false, skips the stream measurements")
-	buffersize_streaming_flag := flag.Int("buffersize_streaming", 100, "buffersize for streaming")
+	random_data_measurement_flag := flag.Bool("random_data_measurement", false, "if false, skips the random data measurements")
+	filetransfer_measurement_flag := flag.Bool("filetransfer_measurement", true, "if false, skips the file measurements")
+	stream_measurement_flag := flag.Bool("stream_measurement", true, "if false, skips the stream measurements")
+	buffersize_streaming_flag := flag.Int("buffersize_streaming", 64000, "buffersize for streaming")
 	flag.Parse()
 	address := *address_flag
 	filename_filetransfer := *filename_filetransfer_flag
@@ -45,26 +45,28 @@ func main() {
 	amount_smalldata := *amount_smalldata_flag
 	only_size_measurement := *only_size_measurement_flag
 	random_data_measurement := *random_data_measurement_flag
-	file_measurement := *file_measurement_flag
+	filetransfer_measurement := *filetransfer_measurement_flag
 	stream_measurement := *stream_measurement_flag
 	buffersize_streaming := *buffersize_streaming_flag
 
-	log.Printf("address: %v, size_bigdata: %v, runs: %v, loops: %v, amount_smalldata: %v, only_size_measurement: %v, random_data_measurement: %v, file_measurement: %v, stream_measurement: %v, buffersize_streaming: %v", address, size_bigdata, runs, loops, amount_smalldata, only_size_measurement, random_data_measurement, file_measurement, stream_measurement, buffersize_streaming)
+	log.Printf("address: %v, size_bigdata: %v, runs: %v, loops: %v, amount_smalldata: %v, only_size_measurement: %v, random_data_measurement: %v, filetransfer_measurement: %v, stream_measurement: %v, buffersize_streaming: %v", address, size_bigdata, runs, loops, amount_smalldata, only_size_measurement, random_data_measurement, filetransfer_measurement, stream_measurement, buffersize_streaming)
 
-	//set dial
+	//---------------------------------- set dial ----------------------------------
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	//create the client_stubs
+
+	//---------------------------------- create the client_stubs ----------------------------------
 	client_text := pb.NewTextServiceClient(conn)
 	client_bigdata := pb.NewBigDataServiceClient(conn)
 	client_upload := pb.NewUploadServiceClient(conn)
 	client_download := pb.NewDownloadServiceClient(conn)
 	client_serversidestreaming := pb.NewServerSideStreamingServiceClient(conn)
 	client_clientsidestreaming := pb.NewClientSideStreamingServiceClient(conn)
-	//define calloptions
+
+	//----------------------------------  define calloptions ----------------------------------
 	max_size := size_bigdata * 1000000 * 2 //in bytes
 	if max_size < 10000000 {
 		max_size = 10000000
@@ -72,7 +74,7 @@ func main() {
 	calloption_recv := grpc.MaxCallRecvMsgSize(max_size)
 	calloption_send := grpc.MaxCallSendMsgSize(max_size)
 
-	//define variables to save benchmark results
+	//---------------------------------- define variables to save benchmark results ----------------------------------
 	benchmark_time_entries := 9
 	benchmark_time := make([][]int, runs)
 	for i := range benchmark_time {
@@ -84,7 +86,7 @@ func main() {
 		benchmark_size[i] = make([]int, benchmark_size_entries)
 	}
 
-	//start the runs
+	//---------------------------------- start the runs ----------------------------------
 	for k := 0; k < runs; k++ {
 
 		//create small data
@@ -114,7 +116,7 @@ func main() {
 
 		log.Printf("starting benchmark run %v...\n", k)
 
-		//Measuring the Sizes of transfered data
+		//---------------------------------- Size Measurements ----------------------------------
 		if random_data_measurement == true {
 			//call service with small data
 			responseBigDataFunc, err := client_bigdata.BigDataFunc(context.Background(), &pb.BigDataRequest{Bigdatareq: req_smalldata, Returnbigdata: false}, calloption_recv, calloption_send)
@@ -140,7 +142,7 @@ func main() {
 			benchmark_size[k][2] = 0
 			benchmark_size[k][3] = 0
 		}
-		if file_measurement == true {
+		if filetransfer_measurement == true {
 			//call upload
 			data, err := ioutil.ReadFile("../grpcclient/foruploadfiles/" + filename_filetransfer)
 			responseUpload, err := client_upload.UploadFunc(context.Background(), &pb.UploadRequest{Filebytes: data, Filename: filename_filetransfer}, calloption_recv, calloption_send)
@@ -173,7 +175,7 @@ func main() {
 
 		log.Printf("done with size measurement")
 
-		//Time Measurements
+		//---------------------------------- Time Measurements ----------------------------------
 		if only_size_measurement == false {
 			//Random Data Measurements
 			if random_data_measurement == true {
@@ -254,8 +256,7 @@ func main() {
 				benchmark_time[k][4] = 0
 			}
 
-			//Time Measurement of Files
-			if file_measurement == true {
+			if filetransfer_measurement == true {
 				//Upload a file to the server
 				start := time.Now()
 				data, err := ioutil.ReadFile("../grpcclient/foruploadfiles/" + filename_filetransfer)
@@ -284,7 +285,6 @@ func main() {
 				benchmark_time[k][6] = 0
 			}
 
-			//Stream Measurements
 			if stream_measurement == true {
 				//Stream data to the server
 				start := time.Now()
@@ -308,6 +308,7 @@ func main() {
 						break
 					}
 					stream.Send(&pb.Bytesmessage{Bytesmes: buffer})
+					log.Println(len(buffer))
 				}
 				reply, err := stream.CloseAndRecv()
 				if err != nil {
@@ -361,7 +362,7 @@ func main() {
 		log.Printf("done with benchmark run %v...\n", k)
 	}
 
-	//print benchmark_time to a file
+	//---------------------------------- print benchmark results to files ----------------------------------
 	if only_size_measurement == false {
 		file, err := os.OpenFile("../../results/benchmarking_grpc_time_"+strconv.Itoa(time.Now().Year())+time.Now().Month().String()+strconv.Itoa(time.Now().Day())+"_"+strconv.Itoa(time.Now().Hour())+"_"+strconv.Itoa(time.Now().Minute())+"_"+strconv.Itoa(time.Now().Second())+".txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
@@ -377,8 +378,6 @@ func main() {
 		datawriter.Flush()
 		file.Close()
 	}
-
-	//print benchmark_size to a file
 	file, err := os.OpenFile("../../results/benchmarking_grpc_size_"+strconv.Itoa(time.Now().Year())+time.Now().Month().String()+strconv.Itoa(time.Now().Day())+"_"+strconv.Itoa(time.Now().Hour())+"_"+strconv.Itoa(time.Now().Minute())+"_"+strconv.Itoa(time.Now().Second())+".txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatalf("failed creating file: %s", err)
