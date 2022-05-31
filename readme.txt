@@ -16,35 +16,36 @@ import of "github.com/mhpixxio/pb" and "github.com/mhpixxio/konstruktor".
 Both, the grpc and http client, are running the same tests.
 At first all the size measurements are done to not influence the time measurements later. All the data packages 
 used in the time measurements are being sent once and the request and response sizes are being evaluated.
-The first five time measurements (2.1 - 2.5) use big and small data packages of random data (see chapter "the 
+The first five time measurements (2.1.1 - 2.1.5) use big and small data packages of random data (see chapter "the 
 random data" for futher explanation). The sizes and amounts can be changed (see chapter "flags"). The flag 
 "size_bigdata"  refers to the size of the data when encoded as protobuf data. If both servers&clients are given 
 size_bigdata=100, then the grpc server&client will send 100MB of encoded data, and the http server&client will 
 use the same data  but encoded as json (which is always larger as the tests have shown). With default flags the 
 client runs all tests 50 times.
-Tests 2.6 and 2.7 transfer a file specified in the flags by buffering the whole file and then sending it.
-Tests 2.8 and 2.9 stream a file specified in the flags without buffering it as a whole.
+Tests 2.2.1 and 2.2.2 transfer a file specified in the flags by buffering the whole file and then sending it.
+Tests 2.2.3 and 2.2.4 stream a file specified in the flags without buffering it as a whole.
 
-
-1. Size measurements
-  1.1 Size of a request with small data
-  1.2 Size of a response with small data
-  1.3 Size of a request with big data
-  1.4 Size of a response with big data
-  1.5 Size of file upload to server
-  1.6 Size of file download from server
-  (Additionally for the http tranfers, the size of the headers always gets measured)
-2. Time measurements
-  2.1 Sending big data to server
-  2.2 Receiving big data from server
-  2.3 Sending small data to server and receiving small data
-  2.4 Sending a lot of small data to server simultaniously
-  2.5 Sending a lot of small data to server after one another
-  2.6 Uploading a file to the server
-  2.7 Downloading a file from the server
-  2.8 Client side streaming of a large file
-  2.9 Server side streaming of a large file
-
+1. Size Measurements
+  1.1. Using Random Data
+    1.1.1. Size of a request with small data
+    1.1.2. Size of a response with small data
+    1.1.3. Size of a request with big data
+    1.1.4. Size of a response with big data
+  1.2. Using Files
+    1.2.1. Size of file upload to server
+    1.2.2. Size of file download from server (Additionally for the http tranfers, the size of the headers always gets measured)
+2. Time Measurements
+  2.1. Using Random Data
+    2.1.1. Sending big data to server
+    2.1.2. Receiving big data from server
+    2.1.3. Sending small data to server and receiving small data
+    2.1.4. Sending a lot of small data to server simultaniously
+    2.1.5. Sending a lot of small data to server after one another
+  2.2. Using Files
+    2.2.1. Uploading a file to the server
+    2.2.2. Downloading a file from the server
+    2.2.3. Client side streaming of a large file
+    2.2.4. Server side streaming of a large file
 
 +++flags+++
 
