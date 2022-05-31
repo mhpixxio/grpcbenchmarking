@@ -21,7 +21,7 @@ func main() {
 
 	//flags
 	port_address_flag := flag.String("port_address", ":4040", "the port_address")
-	size_bigdata_flag := flag.Int("size_bigdata", 100, "in megabytes (size when data gets encrpyted in grpc protobuf)")
+	size_bigdata_flag := flag.Int("size_bigdata", 100, "size of big data responses in megabytes (size when data gets encoded in grpc protobuf)")
 	flag.Parse()
 	port_address := *port_address_flag
 	size_bigdata := *size_bigdata_flag

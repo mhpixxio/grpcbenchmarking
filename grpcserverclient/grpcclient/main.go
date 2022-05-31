@@ -25,16 +25,16 @@ func main() {
 	//---------------------------------- set the flags ----------------------------------
 	address_flag := flag.String("address", "localhost:8080", "the address")
 	filename_filetransfer_flag := flag.String("filename_filetransfer", "filetransfer_Star_Wars_Style_A_poster_1977.webp", "the name of the file for uploading and downloading")
-	filename_streaming_flag := flag.String("filename_streaming", "chunkdata.zip", "the name of the file for streaming")
-	size_bigdata_flag := flag.Int("size_bigdata", 100, "in megabytes (size when data gets encrpyted in grpc protobuf)")
-	runs_flag := flag.Int("runs", 1, "number of runs")
+	filename_streaming_flag := flag.String("filename_streaming", "chunkdata_smaller.zip", "the name of the file for streaming")
+	size_bigdata_flag := flag.Int("size_bigdata", 100, "size of big data requests in megabytes (size when data gets encoded in grpc protobuf)")
+	runs_flag := flag.Int("runs", 50, "number of runs")
 	loops_flag := flag.Int("loops", 10, "number of repeated messages for small data before time measurement and taking average. Gives a more accurate result")
 	amount_smalldata_flag := flag.Int("amount_smalldata", 100, "amount of small-data-messages for sending a lot of small messages simultaniously or after one another")
 	only_size_measurement_flag := flag.Bool("only_size_measurement", false, "if true, skips the time measurements")
-	random_data_measurement_flag := flag.Bool("random_data_measurement", false, "if false, skips the random data measurements")
+	random_data_measurement_flag := flag.Bool("random_data_measurement", true, "if false, skips the random data measurements")
 	filetransfer_measurement_flag := flag.Bool("filetransfer_measurement", true, "if false, skips the file measurements")
 	stream_measurement_flag := flag.Bool("stream_measurement", true, "if false, skips the stream measurements")
-	buffersize_streaming_flag := flag.Int("buffersize_streaming", 64000, "buffersize for streaming")
+	buffersize_streaming_flag := flag.Int("buffersize_streaming", 1000000, "buffersize in bytes for streaming")
 	flag.Parse()
 	address := *address_flag
 	filename_filetransfer := *filename_filetransfer_flag
@@ -48,8 +48,7 @@ func main() {
 	filetransfer_measurement := *filetransfer_measurement_flag
 	stream_measurement := *stream_measurement_flag
 	buffersize_streaming := *buffersize_streaming_flag
-
-	log.Printf("address: %v, size_bigdata: %v, runs: %v, loops: %v, amount_smalldata: %v, only_size_measurement: %v, random_data_measurement: %v, filetransfer_measurement: %v, stream_measurement: %v, buffersize_streaming: %v", address, size_bigdata, runs, loops, amount_smalldata, only_size_measurement, random_data_measurement, filetransfer_measurement, stream_measurement, buffersize_streaming)
+	log.Printf("address: %v, filename_filetransfer: %v, filename_streaming: %v, size_bigdata: %v, runs: %v, loops: %v, amount_smalldata: %v, only_size_measurement: %v, random_data_measurement: %v, filetransfer_measurement: %v, stream_measurement: %v, buffersize_streaming: %v", address, filename_filetransfer, filename_streaming, size_bigdata, runs, loops, amount_smalldata, only_size_measurement, random_data_measurement, filetransfer_measurement, stream_measurement, buffersize_streaming)
 
 	//---------------------------------- set dial ----------------------------------
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -68,8 +67,8 @@ func main() {
 
 	//----------------------------------  define calloptions ----------------------------------
 	max_size := size_bigdata * 1000000 * 2 //in bytes
-	if max_size < 10000000 {
-		max_size = 10000000
+	if max_size < 20000000 {
+		max_size = 20000000
 	}
 	calloption_recv := grpc.MaxCallRecvMsgSize(max_size)
 	calloption_send := grpc.MaxCallSendMsgSize(max_size)
@@ -308,7 +307,6 @@ func main() {
 						break
 					}
 					stream.Send(&pb.Bytesmessage{Bytesmes: buffer})
-					log.Println(len(buffer))
 				}
 				reply, err := stream.CloseAndRecv()
 				if err != nil {
