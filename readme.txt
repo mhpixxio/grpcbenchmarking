@@ -39,7 +39,7 @@ Tests 2.2.3 and 2.2.4 stream a file specified in the flags without buffering it 
     2.1.1. Sending big data to server
     2.1.2. Receiving big data from server
     2.1.3. Sending small data to server and receiving small data
-    2.1.4. Sending a lot of small data to server simultaniously
+    2.1.4. Sending a lot of small data to server simultaneously
     2.1.5. Sending a lot of small data to server after one another
   2.2. Using Files
     2.2.1. Uploading a file to the server
@@ -68,7 +68,7 @@ gprc client flags:
   -loops int
         number of repeated messages for small data before time measurement and taking average. Gives a more accurate result (default 10)
   -amount_smalldata int
-        amount of small-data-messages for sending a lot of small messages simultaniously or after one another (default 100)
+        amount of small-data-messages for sending a lot of small messages simultaneously or after one another (default 100)
   -only_size_measurement
         if true, skips the time measurements (default false)
   -random_data_measurement
@@ -98,7 +98,7 @@ http client flags:
   -loops int
         number of repeated messages for small data before time measurement and taking average. Gives a more accurate result (default 10)
   -amount_smalldata int
-        amount of small-data-messages for sending a lot of small messages simultaniously or after one another (default 100)
+        amount of small-data-messages for sending a lot of small messages simultaneously or after one another (default 100)
   -only_size_measurement
         if true, skips the time measurements (default false)
   -random_data_measurement

@@ -29,7 +29,7 @@ func main() {
 	size_bigdata_flag := flag.Int("size_bigdata", 100, "size of big data requests in megabytes (size when data gets encoded in grpc protobuf)")
 	runs_flag := flag.Int("runs", 50, "number of runs")
 	loops_flag := flag.Int("loops", 10, "number of repeated messages for small data before time measurement and taking average. Gives a more accurate result")
-	amount_smalldata_flag := flag.Int("amount_smalldata", 100, "amount of small-data-messages for sending a lot of small messages simultaniously or after one another")
+	amount_smalldata_flag := flag.Int("amount_smalldata", 100, "amount of small-data-messages for sending a lot of small messages simultaneously or after one another")
 	only_size_measurement_flag := flag.Bool("only_size_measurement", false, "if true, skips the time measurements")
 	random_data_measurement_flag := flag.Bool("random_data_measurement", true, "if false, skips the random data measurements")
 	filetransfer_measurement_flag := flag.Bool("filetransfer_measurement", true, "if false, skips the file measurements")
@@ -143,7 +143,7 @@ func main() {
 				elapsed = int(time.Since(start)) / loops
 				benchmark_time[k][2] = int(elapsed)
 				log.Printf("done with time measurement 2")
-				//Sending a lot of Small Data to Server simultaniously
+				//Sending a lot of Small Data to Server simultaneously
 				start = time.Now()
 				var wg sync.WaitGroup
 				for i := 0; i < loops; i++ {
