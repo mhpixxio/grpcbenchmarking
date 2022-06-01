@@ -184,3 +184,9 @@ and lengthString set to 7. size_bigdata refers to the size  when fully encoded a
 
 The small data used in the tests is created with X=1 and lengthString=1.
 
+
++++the large file for streaming+++
+
+The 1GB file is too big for the git repository. It can be downloaded here: https://cloud.stusta.de/s/CSGWzxdoKsrowRd
+and must be put into the "foruploadfiles" repositories.
+

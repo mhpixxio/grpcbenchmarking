@@ -148,10 +148,14 @@ func (s *server_serversidestreaming) ServerSideStreamingFunc(request *pb.Streami
 				log.Println(err)
 				return err
 			}
-			break
+			return nil
 		}
 		if counter_buffer > 0 {
-			stream.Send(&pb.Bytesmessage{Bytesmes: buffer})
+			if int32(counter_buffer) < buffersize {
+				stream.Send(&pb.Bytesmessage{Bytesmes: buffer[0:counter_buffer]})
+			} else {
+				stream.Send(&pb.Bytesmessage{Bytesmes: buffer})
+			}
 		}
 	}
 	return err
@@ -172,7 +176,7 @@ func (s *server_clientsidestreaming) ClientSideStreamingFunc(stream pb.ClientSid
 	for {
 		data, err := stream.Recv()
 		if err == io.EOF {
-			break
+			return stream.SendAndClose(&pb.Successmessage{Successmes: true})
 		}
 		if err != nil {
 			log.Fatalf("error: %v", err)
@@ -193,5 +197,5 @@ func (s *server_clientsidestreaming) ClientSideStreamingFunc(stream pb.ClientSid
 			return err
 		}
 	}
-	return stream.SendAndClose(&pb.Successmessage{Successmes: true})
+	return err
 }

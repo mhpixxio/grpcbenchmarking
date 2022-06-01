@@ -67,8 +67,8 @@ func main() {
 
 	//----------------------------------  define calloptions ----------------------------------
 	max_size := size_bigdata * 1000000 * 2 //in bytes
-	if max_size < 20000000 {
-		max_size = 20000000
+	if max_size < 200000000 {
+		max_size = 200000000
 	}
 	calloption_recv := grpc.MaxCallRecvMsgSize(max_size)
 	calloption_send := grpc.MaxCallSendMsgSize(max_size)
@@ -302,13 +302,17 @@ func main() {
 					counter_buffer, err := file.Read(buffer)
 					if err != nil && err != io.EOF {
 						log.Println(err)
+						break
 					}
 					if err == io.EOF {
 						break
 					}
 					if counter_buffer > 0 {
-						log.Println(counter_buffer)
-						stream.Send(&pb.Bytesmessage{Bytesmes: buffer})
+						if counter_buffer < buffersize_streaming {
+							stream.Send(&pb.Bytesmessage{Bytesmes: buffer[0:counter_buffer]})
+						} else {
+							stream.Send(&pb.Bytesmessage{Bytesmes: buffer})
+						}
 					}
 				}
 				reply, err := stream.CloseAndRecv()
@@ -342,17 +346,21 @@ func main() {
 					}
 					if err != nil {
 						log.Fatalf("%v.ListFeatures(_) = _, %v", client_serversidestreaming, err)
+						break
 					}
 					// If the file doesn't exist, create it, or append to the file
 					f_2, err := os.OpenFile(streaming_file_address, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 					if err != nil {
 						log.Fatal(err)
+						break
 					}
 					if _, err := f_2.Write(data_2.Bytesmes); err != nil {
 						log.Fatal(err)
+						break
 					}
 					if err := f_2.Close(); err != nil {
 						log.Fatal(err)
+						break
 					}
 				}
 				log.Printf("done with time measurement 8")
