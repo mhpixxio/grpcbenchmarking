@@ -25,7 +25,7 @@ func main() {
 	//---------------------------------- set the flags ----------------------------------
 	address_flag := flag.String("address", "localhost:8080", "the address")
 	filename_filetransfer_flag := flag.String("filename_filetransfer", "filetransfer_Star_Wars_Style_A_poster_1977.webp", "the name of the file for uploading and downloading")
-	filename_streaming_flag := flag.String("filename_streaming", "chunkdata_smaller.zip", "the name of the file for streaming")
+	filename_streaming_flag := flag.String("filename_streaming", "chunkdata.zip", "the name of the file for streaming")
 	size_bigdata_flag := flag.Int("size_bigdata", 100, "size of big data requests in megabytes (size when data gets encoded in grpc protobuf)")
 	runs_flag := flag.Int("runs", 50, "number of runs")
 	loops_flag := flag.Int("loops", 10, "number of repeated messages for small data before time measurement and taking average. Gives a more accurate result")
