@@ -196,13 +196,13 @@ func main() {
 			}
 
 			if stream_measurement == true {
-				//Stream data to the server
+				//Stream a file to the server
 				start := time.Now()
 				clientsidestreamingclient(http_url, "/clientsidestreaming?filename="+filename_streaming, "../httpclient/foruploadfiles/"+filename_streaming)
 				log.Printf("done with time measurement 7")
 				elapsed := int(time.Since(start))
 				benchmark_time[k][7] = int(elapsed)
-				//Stream data from the server
+				//Stream a file from the server
 				start = time.Now()
 				serversidestreamingclient(http_url, "/serversidestreaming?filename="+filename_streaming, "../httpclient/downloadedfiles/"+filename_streaming)
 				log.Printf("done with time measurement 8")

@@ -142,7 +142,7 @@ func (s *server_serversidestreaming) ServerSideStreamingFunc(request *pb.Streami
 	defer file.Close()
 	buffer := make([]byte, buffersize)
 	for {
-		_, err := file.Read(buffer)
+		counter_buffer, err := file.Read(buffer)
 		if err != nil {
 			if err != io.EOF {
 				log.Println(err)
@@ -150,9 +150,11 @@ func (s *server_serversidestreaming) ServerSideStreamingFunc(request *pb.Streami
 			}
 			break
 		}
-		stream.Send(&pb.Bytesmessage{Bytesmes: buffer})
+		if counter_buffer > 0 {
+			stream.Send(&pb.Bytesmessage{Bytesmes: buffer})
+		}
 	}
-	return nil
+	return err
 }
 
 func (s *server_clientsidestreaming) ClientSideStreamingFilenameFunc(ctx context.Context, request *pb.StreamingRequestClientSide) (*pb.Successmessage, error) {
@@ -161,36 +163,35 @@ func (s *server_clientsidestreaming) ClientSideStreamingFilenameFunc(ctx context
 }
 
 func (s *server_clientsidestreaming) ClientSideStreamingFunc(stream pb.ClientSideStreamingService_ClientSideStreamingFuncServer) error {
+	streaming_file_address := "../grpcserver/uploadedfiles/" + filename_clientsidestreaming
+	f, err := os.Create(streaming_file_address)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
+	defer f.Close()
 	for {
-		streaming_file_address := "../grpcserver/uploadedfiles/" + filename_clientsidestreaming
-		f, err := os.Create(streaming_file_address)
+		data, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
 		if err != nil {
 			log.Fatalf("error: %v", err)
+			return err
 		}
-		defer f.Close()
-		for {
-			data, err := stream.Recv()
-			if err == io.EOF {
-				return stream.SendAndClose(&pb.Successmessage{Successmes: true})
-				break
-			}
-			if err != nil {
-				log.Fatalf("error: %v", err)
-			}
-			// If the file doesn't exist, create it, or append to the file
-			f_2, err := os.OpenFile(streaming_file_address, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-			if err != nil {
-				log.Fatal(err)
-			}
-			if _, err := f_2.Write(data.Bytesmes); err != nil {
-				log.Fatal(err)
-			}
-			if err := f_2.Close(); err != nil {
-				log.Fatal(err)
-			}
-		}
+		// If the file doesn't exist, create it, or append to the file
+		f_2, err := os.OpenFile(streaming_file_address, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
+			log.Fatal(err)
+			return err
+		}
+		if _, err := f_2.Write(data.Bytesmes); err != nil {
+			log.Fatal(err)
+			return err
+		}
+		if err := f_2.Close(); err != nil {
+			log.Fatal(err)
 			return err
 		}
 	}
+	return stream.SendAndClose(&pb.Successmessage{Successmes: true})
 }

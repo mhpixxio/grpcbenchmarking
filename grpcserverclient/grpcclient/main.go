@@ -285,7 +285,7 @@ func main() {
 			}
 
 			if stream_measurement == true {
-				//Stream data to the server
+				//Stream a file to the server
 				start := time.Now()
 				client_clientsidestreaming.ClientSideStreamingFilenameFunc(context.Background(), &pb.StreamingRequestClientSide{Filename: filename_streaming}, calloption_recv, calloption_send)
 				stream, err := client_clientsidestreaming.ClientSideStreamingFunc(context.Background())
@@ -299,14 +299,17 @@ func main() {
 				defer file.Close()
 				buffer := make([]byte, buffersize_streaming)
 				for {
-					_, err := file.Read(buffer)
+					counter_buffer, err := file.Read(buffer)
 					if err != nil && err != io.EOF {
 						log.Println(err)
 					}
 					if err == io.EOF {
 						break
 					}
-					stream.Send(&pb.Bytesmessage{Bytesmes: buffer})
+					if counter_buffer > 0 {
+						log.Println(counter_buffer)
+						stream.Send(&pb.Bytesmessage{Bytesmes: buffer})
+					}
 				}
 				reply, err := stream.CloseAndRecv()
 				if err != nil {
@@ -319,7 +322,7 @@ func main() {
 				elapsed := int(time.Since(start))
 				benchmark_time[k][7] = int(elapsed)
 
-				//Stream data from the server
+				//Stream a file from the server
 				start = time.Now()
 				streaming_file_address := "../grpcclient/downloadedfiles/" + filename_streaming
 				f, err := os.Create(streaming_file_address)
